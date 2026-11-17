@@ -53,7 +53,7 @@ jobs:
         working-directory: pasejo
         run: rustup target add aarch64-linux-android x86_64-linux-android
       - name: Build and test
-        run: ./gradlew --no-daemon -Ppasejo.dir=pasejo assembleDebug testDebugUnitTest
+        run: gradle --no-daemon -Ppasejo.dir=pasejo assembleDebug testDebugUnitTest
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -100,7 +100,7 @@ jobs:
         working-directory: pasejo
         run: rustup target add aarch64-linux-android x86_64-linux-android
       - name: Build the test APKs
-        run: ./gradlew --no-daemon -Ppasejo.dir=pasejo assembleDebug assembleDebugAndroidTest
+        run: gradle --no-daemon -Ppasejo.dir=pasejo assembleDebug assembleDebugAndroidTest
       - name: Run on an emulator
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -108,7 +108,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: ./gradlew --no-daemon -Ppasejo.dir=pasejo connectedDebugAndroidTest
+          script: gradle --no-daemon -Ppasejo.dir=pasejo connectedDebugAndroidTest
   verify:
     name: Verify
     needs: [test, instrumented]

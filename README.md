@@ -33,14 +33,14 @@ A device policy controller can set `server_url`, `organization`, `genesis_hash`,
 
 The app compiles `pasejo-mobile` from a pasejo checkout next to this one (`../pasejo`, or `-Ppasejo.dir=<path>`). The toolchain:
 
-- The JDK, Gradle and Rust come from [breto](https://github.com/metio/breto): run `eval "$(breto env)"`.
+- The JDK, Gradle and Rust come from [breto](https://github.com/metio/breto): run `eval "$(breto env)"`. The project has no Gradle wrapper; `.breto.edn` names the Gradle it builds with.
 - The Android SDK with `platforms;android-36` and NDK `30.0.16248370`, named in `local.properties` as `sdk.dir=<path>`.
 - The Rust targets `aarch64-linux-android` and `x86_64-linux-android`.
 
 ```sh
-./gradlew assembleDebug              # app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest          # JVM tests, with the core and pasejo-server built for this computer
-./gradlew connectedDebugAndroidTest  # instrumented tests on a running emulator or phone
+gradle assembleDebug              # app/build/outputs/apk/debug/app-debug.apk
+gradle testDebugUnitTest          # JVM tests, with the core and pasejo-server built for this computer
+gradle connectedDebugAndroidTest  # instrumented tests on a running emulator or phone
 ```
 
 The Gradle build cross-compiles the core for `arm64-v8a` and `x86_64` and generates the Kotlin bindings with UniFFI. The instrumented tests create keys without the authentication requirement, so they run on an emulator without a lock screen. The autofill tests make pasejo the system's autofill service, and the managed-configuration tests make the test APK device owner, which works only on a device without accounts, such as a fresh emulator; both restore the device afterwards. Emulators keep keys in software, so the test that requires secure hardware runs only on a phone. CI (`.github/workflows/verify.yml`) builds against the `main` branch of metio/pasejo and runs both suites, the instrumented one on an API 36 emulator.
