@@ -7,6 +7,7 @@ import android.app.Activity
 import android.hardware.biometrics.BiometricManager.Authenticators
 import android.hardware.biometrics.BiometricPrompt
 import android.os.CancellationSignal
+import javax.crypto.Cipher
 import wtf.metio.pasejo.core.StoreView
 
 /**
@@ -24,6 +25,27 @@ object Unlocker {
         } catch (error: Exception) {
             return done(Result.failure(error))
         }
+        authenticate(activity, cipher) { authenticated ->
+            authenticated.fold(
+                { unsealer ->
+                    app.background({ device.unlock(app.keys.agreement(unsealer)) }) { opened ->
+                        if (opened.isSuccess) {
+                            app.opened(app.managed.unlockSeconds())
+                            app.save()
+                        }
+                        done(opened)
+                    }
+                },
+                { error -> done(Result.failure(error)) },
+            )
+        }
+    }
+
+    /**
+     * Shows the system's authentication prompt, bound to `cipher` when there
+     * is one, and hands back the cipher the authentication unlocked.
+     */
+    fun authenticate(activity: Activity, cipher: Cipher?, done: (Result<Cipher?>) -> Unit) {
         val prompt = BiometricPrompt.Builder(activity)
             .setTitle(activity.getString(R.string.unlock_title))
             .setSubtitle(activity.getString(R.string.unlock_subtitle))
@@ -31,16 +53,7 @@ object Unlocker {
             .build()
         val callback = object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                app.background({
-                    val identity = app.keys.agreement(result.cryptoObject?.cipher)
-                    device.unlock(identity)
-                }) { opened ->
-                    if (opened.isSuccess) {
-                        app.opened(app.managed.unlockSeconds())
-                        app.save()
-                    }
-                    done(opened)
-                }
+                done(Result.success(result.cryptoObject?.cipher))
             }
 
             override fun onAuthenticationError(code: Int, message: CharSequence) {
