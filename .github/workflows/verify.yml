@@ -110,7 +110,7 @@ jobs:
           disable-animations: true
           script: gradle --no-daemon -Ppasejo.dir=pasejo connectedDebugAndroidTest
       - name: Upload test reports
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: instrumented-test-reports
