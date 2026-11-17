@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<resources>
+    <string name="app_name">pasejo</string>
+
+    <string name="action_autofill">Use pasejo for autofill</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_copy_code">Copy code</string>
+    <string name="action_copy_password">Copy password</string>
+    <string name="action_fill">Fill</string>
+    <string name="action_lock">Lock</string>
+    <string name="action_reset">Remove this device</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_reveal">Reveal</string>
+    <string name="action_show_code">Show code</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_unlock">Unlock</string>
+
+    <string name="setup_title">Set up pasejo</string>
+    <string name="setup_explanation">Enter the server, the organization identifier and the organization fingerprint an admin gave you. The checkpoint key is optional; when given, the server must present it.</string>
+    <string name="setup_server">Server URL (https://…)</string>
+    <string name="setup_org">Organization identifier</string>
+    <string name="setup_genesis">Organization fingerprint</string>
+    <string name="setup_checkpoint">Checkpoint key (optional)</string>
+    <string name="setup_creating">Creating the device keys and contacting the server…</string>
+    <string name="tier_hardware">This phone keeps the device keys inside its secure hardware.</string>
+    <string name="tier_sealed">This phone cannot keep these key types in its secure hardware, so the device keys are sealed by keys that it keeps there.</string>
+
+    <string name="sign_in_title">Sign in</string>
+    <string name="sign_in_explanation">Sign in to %1$s in your browser. The browser returns to pasejo afterwards.</string>
+    <string name="sign_in_finishing">Finishing the sign-in…</string>
+    <string name="join_running">Joining the organization…</string>
+
+    <string name="locked_title">Locked</string>
+    <string name="locked_checking">Checking this device\'s approval…</string>
+    <string name="locked_fingerprint">Device fingerprint, which an admin compares before approving:</string>
+    <string name="locked_active">This device is approved in %1$s.</string>
+    <string name="locked_pending">This device waits for approval in %1$s.</string>
+    <string name="locked_inactive">This device is not a member of %1$s.</string>
+    <string name="unlock_title">Unlock pasejo</string>
+    <string name="unlock_subtitle">Open the stores on this device</string>
+
+    <string name="stores_title">Stores</string>
+    <string name="stores_empty">No store has been shared with this device yet.</string>
+    <string name="entries_filter">Filter</string>
+    <string name="entry_hidden">••••••••</string>
+    <string name="entry_copied">Copied. The clipboard is cleared in %1$d seconds.</string>
+    <string name="entry_code">%1$s (%2$d s)</string>
+
+    <string name="reset_title">Remove this device?</string>
+    <string name="reset_message">The device keys and the sign-in on this phone are deleted. Signing in again creates a new device that an admin has to approve.</string>
+    <string name="restore_failed">The saved device cannot be opened: %1$s</string>
+
+    <string name="autofill_entry">Fill with pasejo</string>
+    <string name="autofill_setup">pasejo can fill logins in apps and browsers. In Chrome, also select \"Autofill using another service\" in Chrome\'s settings.</string>
+    <string name="autofill_no_save">pasejo does not save new passwords yet.</string>
+    <string name="fill_checking">Checking who asks…</string>
+    <string name="fill_nothing">pasejo cannot tell which site or app this form belongs to.</string>
+    <string name="fill_title">Fill</string>
+    <string name="fill_for_site">For %1$s</string>
+    <string name="fill_for_app">For the app %1$s</string>
+    <string name="fill_no_matches">No entry matches.</string>
+    <string name="fill_lookalikes">Warning: entries exist for similar domains (%1$s). This may be a phishing site.</string>
+    <string name="fill_confirm_title">Fill this entry?</string>
+    <string name="fill_confirm_message">%1$s asks to be confirmed before it is filled. %2$s.</string>
+    <string name="fill_empty">The entry has no value for the fields of this form.</string>
+
+    <string name="error_title">Something went wrong</string>
+    <string name="error_network">The server cannot be reached: %1$s</string>
+    <string name="error_refused">The server refused: %1$s</string>
+    <string name="error_verification">The server\'s answer does not verify, so pasejo does not trust it: %1$s</string>
+    <string name="error_not_signed_in">You are signed out. Sign in again.</string>
+    <string name="error_locked">pasejo is locked.</string>
+    <string name="error_not_found">The entry does not exist or does not match.</string>
+    <string name="error_key">The device key cannot be used: %1$s</string>
+    <string name="error_insecure_key_store">This phone keeps keys in software only, so pasejo cannot protect them here.</string>
+
+    <string name="restriction_server_url">Server URL</string>
+    <string name="restriction_server_url_description">The https URL of the pasejo server.</string>
+    <string name="restriction_organization">Organization identifier</string>
+    <string name="restriction_organization_description">The organization this device joins.</string>
+    <string name="restriction_genesis_hash">Organization fingerprint</string>
+    <string name="restriction_genesis_hash_description">The hash of the organization\'s genesis, pinned on first use.</string>
+    <string name="restriction_checkpoint_key">Checkpoint key</string>
+    <string name="restriction_checkpoint_key_description">The server\'s checkpoint key, pinned on first use.</string>
+    <string name="restriction_max_unlock_seconds">Longest unlock period</string>
+    <string name="restriction_max_unlock_seconds_description">Seconds the stores stay open after an unlock.</string>
+    <string name="restriction_allow_copy">Allow copying</string>
+    <string name="restriction_allow_copy_description">Whether passwords and codes may be copied to the clipboard.</string>
+</resources>

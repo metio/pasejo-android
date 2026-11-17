@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+    <restriction
+        android:key="server_url"
+        android:restrictionType="string"
+        android:title="@string/restriction_server_url"
+        android:description="@string/restriction_server_url_description" />
+    <restriction
+        android:key="organization"
+        android:restrictionType="string"
+        android:title="@string/restriction_organization"
+        android:description="@string/restriction_organization_description" />
+    <restriction
+        android:key="genesis_hash"
+        android:restrictionType="string"
+        android:title="@string/restriction_genesis_hash"
+        android:description="@string/restriction_genesis_hash_description" />
+    <restriction
+        android:key="checkpoint_key"
+        android:restrictionType="string"
+        android:title="@string/restriction_checkpoint_key"
+        android:description="@string/restriction_checkpoint_key_description" />
+    <restriction
+        android:key="max_unlock_seconds"
+        android:restrictionType="integer"
+        android:defaultValue="300"
+        android:title="@string/restriction_max_unlock_seconds"
+        android:description="@string/restriction_max_unlock_seconds_description" />
+    <restriction
+        android:key="allow_copy"
+        android:restrictionType="bool"
+        android:defaultValue="true"
+        android:title="@string/restriction_allow_copy"
+        android:description="@string/restriction_allow_copy_description" />
+</restrictions>
