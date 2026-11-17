@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: The pasejo Authors
 # SPDX-License-Identifier: 0BSD
 
-name: Verify Commits
+# `Verify` is the one required check and passes only when every other job
+# succeeded or was skipped.
+
+name: Verify
 on:
   merge_group:
   pull_request:
-    branches: [ main ]
-  push:
     branches: [ main ]
 permissions:
   contents: read
@@ -108,3 +109,16 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: ./gradlew --no-daemon -Ppasejo.dir=pasejo connectedDebugAndroidTest
+  verify:
+    name: Verify
+    needs: [test, instrumented]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check that every job succeeded or was skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          bad=$(echo "$NEEDS" | jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | "\(.key)=\(.value.result)"')
+          [ -z "$bad" ] || { echo "::error::$bad"; exit 1; }
