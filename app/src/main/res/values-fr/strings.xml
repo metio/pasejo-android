@@ -74,6 +74,7 @@
     <string name="error_not_found">L’entrée n’existe pas ou ne correspond pas.</string>
     <string name="error_key">La clé de l’appareil ne peut pas être utilisée : %1$s</string>
     <string name="error_insecure_key_store">Ce téléphone conserve les clés uniquement de manière logicielle ; pasejo ne peut donc pas les protéger ici.</string>
+    <string name="error_no_screen_lock">Configurez d\'abord un verrouillage de l\'écran (code, schéma ou mot de passe). pasejo protège ses clés avec celui-ci.</string>
 
     <string name="restriction_server_url">URL du serveur</string>
     <string name="restriction_server_url_description">L’URL https du serveur pasejo.</string>

@@ -46,6 +46,9 @@ enum class Tier {
 /** A key store that keeps keys in software, which the app refuses. */
 class InsecureKeyStoreException(message: String) : GeneralSecurityException(message)
 
+/** The phone has no secure lock screen, which the age identity needs. */
+class NoScreenLockException : GeneralSecurityException("the phone has no secure lock screen")
+
 /**
  * The device's Ed25519 signing key and X25519 age identity in Android's key
  * store. Every key must report a trusted execution environment or StrongBox;

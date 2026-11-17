@@ -3,11 +3,14 @@
 
 package wtf.metio.pasejo
 
+import android.app.KeyguardManager
 import android.view.WindowManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -30,6 +33,16 @@ class MainActivityTest {
                 assertTrue(texts.toString(), activity.getString(R.string.setup_title) in texts)
             }
         }
+    }
+
+    @Test
+    fun aPhoneWithoutAScreenLockGetsNoKeys() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        assumeFalse("the phone has a screen lock", context.getSystemService(KeyguardManager::class.java).isDeviceSecure)
+        val app = context.applicationContext as PasejoApp
+        assertThrows(NoScreenLockException::class.java) { app.create("https://pasejo.example") }
+        assertNull(app.keys.tier)
+        assertNull(app.device)
     }
 
     @Test

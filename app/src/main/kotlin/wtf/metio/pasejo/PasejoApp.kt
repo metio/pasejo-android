@@ -4,6 +4,7 @@
 package wtf.metio.pasejo
 
 import android.app.Application
+import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -70,8 +71,13 @@ class PasejoApp : Application() {
     fun supportedTier(): Tier =
         DeviceKeys.supportedTier(packageManager.hasSystemFeature(PackageManager.FEATURE_HARDWARE_KEYSTORE, 200))
 
-    /** Creates the keys and a device for `serverUrl`. */
+    /**
+     * Creates the keys and a device for `serverUrl`. The age identity needs
+     * the screen lock or a biometric, so a phone without a secure lock
+     * screen gets no keys at all.
+     */
     fun create(serverUrl: String): Device {
+        if (!getSystemService(KeyguardManager::class.java).isDeviceSecure) throw NoScreenLockException()
         keys.create(supportedTier())
         val created = Device.create(serverUrl, Build.MODEL, keys.signer(), keys.agreementPublicKey(), TrustAnchors.system())
         device = created
