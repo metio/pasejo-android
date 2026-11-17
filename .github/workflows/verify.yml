@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: The pasejo Authors
+# SPDX-License-Identifier: 0BSD
+
+name: Verify Commits
+on:
+  merge_group:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+permissions:
+  contents: read
+
+env:
+  # The pasejo revision whose pasejo-mobile the app builds.
+  PASEJO_REF: main
+  NDK_VERSION: 30.0.16248370
+
+jobs:
+  test:
+    name: Build and JVM tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Checkout pasejo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: metio/pasejo
+          ref: ${{ env.PASEJO_REF }}
+          path: pasejo
+          persist-credentials: false
+      - uses: metio/ci/breto@00adafd0fe1924f57325d9dd264d5d731fb099ad # 2026.11.4082509
+        with:
+          registries: github:metio/toolchains
+      - name: Cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/build/cargo
+          key: android-cargo-${{ hashFiles('pasejo/Cargo.lock') }}
+      - name: Set up Android
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "ndk;${NDK_VERSION}"
+      - name: Set up Rust targets
+        working-directory: pasejo
+        run: rustup target add aarch64-linux-android x86_64-linux-android
+      - name: Build and test
+        run: ./gradlew --no-daemon -Ppasejo.dir=pasejo assembleDebug testDebugUnitTest
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: jvm-test-reports
+          path: app/build/reports/tests
+  instrumented:
+    name: Instrumented tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Checkout pasejo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: metio/pasejo
+          ref: ${{ env.PASEJO_REF }}
+          path: pasejo
+          persist-credentials: false
+      - uses: metio/ci/breto@00adafd0fe1924f57325d9dd264d5d731fb099ad # 2026.11.4082509
+        with:
+          registries: github:metio/toolchains
+      - name: Cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/build/cargo
+          key: android-cargo-${{ hashFiles('pasejo/Cargo.lock') }}
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Set up Android
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "ndk;${NDK_VERSION}"
+      - name: Set up Rust targets
+        working-directory: pasejo
+        run: rustup target add aarch64-linux-android x86_64-linux-android
+      - name: Build the test APKs
+        run: ./gradlew --no-daemon -Ppasejo.dir=pasejo assembleDebug assembleDebugAndroidTest
+      - name: Run on an emulator
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew --no-daemon -Ppasejo.dir=pasejo connectedDebugAndroidTest

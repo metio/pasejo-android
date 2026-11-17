@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<resources>
+    <string name="action_autofill">使用 pasejo 自动填充</string>
+    <string name="action_continue">继续</string>
+    <string name="action_copy_code">复制验证码</string>
+    <string name="action_copy_password">复制密码</string>
+    <string name="action_fill">填充</string>
+    <string name="action_lock">锁定</string>
+    <string name="action_reset">移除此设备</string>
+    <string name="action_retry">重试</string>
+    <string name="action_reveal">显示</string>
+    <string name="action_show_code">显示验证码</string>
+    <string name="action_sign_in">登录</string>
+    <string name="action_unlock">解锁</string>
+
+    <string name="setup_title">设置 pasejo</string>
+    <string name="setup_explanation">请输入管理员提供给你的服务器、组织标识符和组织指纹。检查点密钥为可选项；如果填写，服务器必须出示该密钥。</string>
+    <string name="setup_server">服务器 URL (https://…)</string>
+    <string name="setup_org">组织标识符</string>
+    <string name="setup_genesis">组织指纹</string>
+    <string name="setup_checkpoint">检查点密钥（可选）</string>
+    <string name="setup_creating">正在创建设备密钥并连接服务器…</string>
+    <string name="tier_hardware">此手机将设备密钥保存在其安全硬件中。</string>
+    <string name="tier_sealed">此手机无法在其安全硬件中保存这些类型的密钥，因此设备密钥由保存在安全硬件中的密钥封存。</string>
+
+    <string name="sign_in_title">登录</string>
+    <string name="sign_in_explanation">请在浏览器中登录 %1$s。之后浏览器会返回 pasejo。</string>
+    <string name="sign_in_finishing">正在完成登录…</string>
+    <string name="join_running">正在加入组织…</string>
+
+    <string name="locked_title">已锁定</string>
+    <string name="locked_checking">正在检查此设备的批准状态…</string>
+    <string name="locked_fingerprint">设备指纹，管理员在批准前会进行比对：</string>
+    <string name="locked_active">此设备已在 %1$s 中获得批准。</string>
+    <string name="locked_pending">此设备正在等待 %1$s 的批准。</string>
+    <string name="locked_inactive">此设备不是 %1$s 的成员。</string>
+    <string name="unlock_title">解锁 pasejo</string>
+    <string name="unlock_subtitle">在此设备上打开存储库</string>
+
+    <string name="stores_title">存储库</string>
+    <string name="offline_notice">无法连接服务器。只能使用此手机之前读取过的值，每次读取都会在服务器恢复连接后报告。</string>
+    <string name="stores_empty">尚未有存储库与此设备共享。</string>
+    <string name="entries_filter">筛选</string>
+    <string name="entry_hidden">••••••••</string>
+    <string name="entry_copied">已复制。剪贴板将在 %1$d 秒后清除。</string>
+    <string name="entry_code">%1$s（%2$d 秒）</string>
+
+    <string name="reset_title">移除此设备？</string>
+    <string name="reset_message">此手机上的设备密钥和登录信息将被删除。重新登录会创建一个需要管理员批准的新设备。</string>
+    <string name="restore_failed">无法打开已保存的设备：%1$s</string>
+
+    <string name="autofill_entry">使用 pasejo 填充</string>
+    <string name="autofill_setup">pasejo 可以在应用和浏览器中填充登录信息。在 Chrome 中，还需在 Chrome 设置中选择“使用其他服务自动填充”。</string>
+    <string name="autofill_no_save">pasejo 暂不保存新密码。</string>
+    <string name="fill_checking">正在检查请求方…</string>
+    <string name="fill_nothing">pasejo 无法判断此表单属于哪个网站或应用。</string>
+    <string name="fill_title">填充</string>
+    <string name="fill_for_site">用于 %1$s</string>
+    <string name="fill_for_app">用于应用 %1$s</string>
+    <string name="fill_no_matches">没有匹配的条目。</string>
+    <string name="fill_lookalikes">警告：存在相似域名（%1$s）的条目。这可能是钓鱼网站。</string>
+    <string name="fill_confirm_title">填充此条目？</string>
+    <string name="fill_confirm_message">%1$s 要求在填充前确认。%2$s。</string>
+    <string name="fill_empty">该条目没有适用于此表单字段的值。</string>
+
+    <string name="error_title">出现问题</string>
+    <string name="error_network">无法连接服务器：%1$s</string>
+    <string name="error_refused">服务器拒绝了请求：%1$s</string>
+    <string name="error_verification">服务器的响应无法验证，因此 pasejo 不信任它：%1$s</string>
+    <string name="error_not_signed_in">你已退出登录。请重新登录。</string>
+    <string name="error_locked">pasejo 已锁定。</string>
+    <string name="error_not_found">该条目不存在或不匹配。</string>
+    <string name="error_key">无法使用设备密钥：%1$s</string>
+    <string name="error_insecure_key_store">此手机只能在软件中保存密钥，因此 pasejo 无法在此保护它们。</string>
+
+    <string name="restriction_server_url">服务器 URL</string>
+    <string name="restriction_server_url_description">pasejo 服务器的 https URL。</string>
+    <string name="restriction_organization">组织标识符</string>
+    <string name="restriction_organization_description">此设备加入的组织。</string>
+    <string name="restriction_genesis_hash">组织指纹</string>
+    <string name="restriction_genesis_hash_description">组织创世记录的哈希，在首次使用时固定。</string>
+    <string name="restriction_checkpoint_key">检查点密钥</string>
+    <string name="restriction_checkpoint_key_description">服务器的检查点密钥，在首次使用时固定。</string>
+    <string name="restriction_max_unlock_seconds">最长解锁时间</string>
+    <string name="restriction_max_unlock_seconds_description">解锁后存储库保持打开的秒数。</string>
+    <string name="restriction_allow_copy">允许复制</string>
+    <string name="restriction_allow_copy_description">是否允许将密码和验证码复制到剪贴板。</string>
+</resources>

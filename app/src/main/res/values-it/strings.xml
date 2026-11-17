@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<resources>
+    <string name="action_autofill">Usa pasejo per la compilazione automatica</string>
+    <string name="action_continue">Continua</string>
+    <string name="action_copy_code">Copia codice</string>
+    <string name="action_copy_password">Copia password</string>
+    <string name="action_fill">Compila</string>
+    <string name="action_lock">Blocca</string>
+    <string name="action_reset">Rimuovi questo dispositivo</string>
+    <string name="action_retry">Riprova</string>
+    <string name="action_reveal">Mostra</string>
+    <string name="action_show_code">Mostra codice</string>
+    <string name="action_sign_in">Accedi</string>
+    <string name="action_unlock">Sblocca</string>
+
+    <string name="setup_title">Configura pasejo</string>
+    <string name="setup_explanation">Inserisci il server, l’identificativo dell’organizzazione e l’impronta dell’organizzazione che ti ha fornito un amministratore. La chiave di checkpoint è facoltativa; se indicata, il server deve presentarla.</string>
+    <string name="setup_server">URL del server (https://…)</string>
+    <string name="setup_org">Identificativo dell’organizzazione</string>
+    <string name="setup_genesis">Impronta dell’organizzazione</string>
+    <string name="setup_checkpoint">Chiave di checkpoint (facoltativa)</string>
+    <string name="setup_creating">Creazione delle chiavi del dispositivo e contatto con il server…</string>
+    <string name="tier_hardware">Questo telefono conserva le chiavi del dispositivo nel suo hardware sicuro.</string>
+    <string name="tier_sealed">Questo telefono non può conservare questi tipi di chiave nel suo hardware sicuro, quindi le chiavi del dispositivo sono sigillate da chiavi che vi conserva.</string>
+
+    <string name="sign_in_title">Accedi</string>
+    <string name="sign_in_explanation">Accedi a %1$s nel browser. Al termine il browser torna a pasejo.</string>
+    <string name="sign_in_finishing">Completamento dell’accesso…</string>
+    <string name="join_running">Adesione all’organizzazione…</string>
+
+    <string name="locked_title">Bloccato</string>
+    <string name="locked_checking">Verifica dell’approvazione di questo dispositivo…</string>
+    <string name="locked_fingerprint">Impronta del dispositivo, che un amministratore confronta prima di approvarlo:</string>
+    <string name="locked_active">Questo dispositivo è approvato in %1$s.</string>
+    <string name="locked_pending">Questo dispositivo attende l’approvazione in %1$s.</string>
+    <string name="locked_inactive">Questo dispositivo non è membro di %1$s.</string>
+    <string name="unlock_title">Sblocca pasejo</string>
+    <string name="unlock_subtitle">Apri gli archivi su questo dispositivo</string>
+
+    <string name="stores_title">Archivi</string>
+    <string name="offline_notice">Il server non è raggiungibile. Sono disponibili solo i valori che questo telefono ha letto in precedenza, e ogni lettura viene segnalata appena il server torna raggiungibile.</string>
+    <string name="stores_empty">Nessun archivio è ancora stato condiviso con questo dispositivo.</string>
+    <string name="entries_filter">Filtro</string>
+    <string name="entry_hidden">••••••••</string>
+    <string name="entry_copied">Copiato. Gli appunti vengono svuotati tra %1$d secondi.</string>
+    <string name="entry_code">%1$s (%2$d s)</string>
+
+    <string name="reset_title">Rimuovere questo dispositivo?</string>
+    <string name="reset_message">Le chiavi del dispositivo e l’accesso su questo telefono vengono eliminati. Un nuovo accesso crea un nuovo dispositivo che un amministratore deve approvare.</string>
+    <string name="restore_failed">Impossibile aprire il dispositivo salvato: %1$s</string>
+
+    <string name="autofill_entry">Compila con pasejo</string>
+    <string name="autofill_setup">pasejo può compilare gli accessi in app e browser. In Chrome seleziona anche \"Compilazione automatica con un altro servizio\" nelle impostazioni di Chrome.</string>
+    <string name="autofill_no_save">pasejo non salva ancora nuove password.</string>
+    <string name="fill_checking">Verifica di chi lo chiede…</string>
+    <string name="fill_nothing">pasejo non riesce a capire a quale sito o app appartenga questo modulo.</string>
+    <string name="fill_title">Compila</string>
+    <string name="fill_for_site">Per %1$s</string>
+    <string name="fill_for_app">Per l’app %1$s</string>
+    <string name="fill_no_matches">Nessuna voce corrisponde.</string>
+    <string name="fill_lookalikes">Attenzione: esistono voci per domini simili (%1$s). Potrebbe trattarsi di un sito di phishing.</string>
+    <string name="fill_confirm_title">Compilare questa voce?</string>
+    <string name="fill_confirm_message">%1$s chiede una conferma prima di essere compilata. %2$s.</string>
+    <string name="fill_empty">La voce non ha un valore per i campi di questo modulo.</string>
+
+    <string name="error_title">Qualcosa è andato storto</string>
+    <string name="error_network">Il server non è raggiungibile: %1$s</string>
+    <string name="error_refused">Il server ha rifiutato: %1$s</string>
+    <string name="error_verification">La risposta del server non si verifica, quindi pasejo non se ne fida: %1$s</string>
+    <string name="error_not_signed_in">Sei disconnesso. Accedi di nuovo.</string>
+    <string name="error_locked">pasejo è bloccato.</string>
+    <string name="error_not_found">La voce non esiste o non corrisponde.</string>
+    <string name="error_key">Impossibile usare la chiave del dispositivo: %1$s</string>
+    <string name="error_insecure_key_store">Questo telefono conserva le chiavi solo via software, quindi pasejo non può proteggerle qui.</string>
+
+    <string name="restriction_server_url">URL del server</string>
+    <string name="restriction_server_url_description">L’URL https del server pasejo.</string>
+    <string name="restriction_organization">Identificativo dell’organizzazione</string>
+    <string name="restriction_organization_description">L’organizzazione a cui aderisce questo dispositivo.</string>
+    <string name="restriction_genesis_hash">Impronta dell’organizzazione</string>
+    <string name="restriction_genesis_hash_description">L’hash della genesi dell’organizzazione, fissato al primo utilizzo.</string>
+    <string name="restriction_checkpoint_key">Chiave di checkpoint</string>
+    <string name="restriction_checkpoint_key_description">La chiave di checkpoint del server, fissata al primo utilizzo.</string>
+    <string name="restriction_max_unlock_seconds">Durata massima dello sblocco</string>
+    <string name="restriction_max_unlock_seconds_description">Secondi in cui gli archivi restano aperti dopo lo sblocco.</string>
+    <string name="restriction_allow_copy">Consenti la copia</string>
+    <string name="restriction_allow_copy_description">Se password e codici possono essere copiati negli appunti.</string>
+</resources>

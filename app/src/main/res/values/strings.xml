@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: The pasejo Authors -->
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
-    <string name="app_name">pasejo</string>
+    <string name="app_name" translatable="false">pasejo</string>
 
     <string name="action_autofill">Use pasejo for autofill</string>
     <string name="action_continue">Continue</string>
@@ -42,6 +42,7 @@
     <string name="unlock_subtitle">Open the stores on this device</string>
 
     <string name="stores_title">Stores</string>
+    <string name="offline_notice">The server cannot be reached. Only values this phone read before are available, and each read is reported once the server is reachable again.</string>
     <string name="stores_empty">No store has been shared with this device yet.</string>
     <string name="entries_filter">Filter</string>
     <string name="entry_hidden">••••••••</string>

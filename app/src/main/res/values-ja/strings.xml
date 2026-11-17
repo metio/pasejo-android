@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<resources>
+    <string name="action_autofill">自動入力に pasejo を使う</string>
+    <string name="action_continue">続ける</string>
+    <string name="action_copy_code">コードをコピー</string>
+    <string name="action_copy_password">パスワードをコピー</string>
+    <string name="action_fill">入力</string>
+    <string name="action_lock">ロック</string>
+    <string name="action_reset">このデバイスを削除</string>
+    <string name="action_retry">再試行</string>
+    <string name="action_reveal">表示</string>
+    <string name="action_show_code">コードを表示</string>
+    <string name="action_sign_in">サインイン</string>
+    <string name="action_unlock">ロック解除</string>
+
+    <string name="setup_title">pasejo の設定</string>
+    <string name="setup_explanation">管理者から受け取ったサーバー、組織の識別子、組織のフィンガープリントを入力してください。チェックポイント鍵は任意です。入力した場合、サーバーはその鍵を提示する必要があります。</string>
+    <string name="setup_server">サーバー URL (https://…)</string>
+    <string name="setup_org">組織の識別子</string>
+    <string name="setup_genesis">組織のフィンガープリント</string>
+    <string name="setup_checkpoint">チェックポイント鍵 (任意)</string>
+    <string name="setup_creating">デバイス鍵を作成し、サーバーに接続しています…</string>
+    <string name="tier_hardware">この電話はデバイス鍵をセキュアハードウェア内に保管します。</string>
+    <string name="tier_sealed">この電話はこれらの種類の鍵をセキュアハードウェアに保管できないため、デバイス鍵はそこに保管された鍵で封印されます。</string>
+
+    <string name="sign_in_title">サインイン</string>
+    <string name="sign_in_explanation">ブラウザで %1$s にサインインしてください。その後、ブラウザは pasejo に戻ります。</string>
+    <string name="sign_in_finishing">サインインを完了しています…</string>
+    <string name="join_running">組織に参加しています…</string>
+
+    <string name="locked_title">ロック中</string>
+    <string name="locked_checking">このデバイスの承認を確認しています…</string>
+    <string name="locked_fingerprint">デバイスのフィンガープリント (管理者が承認前に照合します):</string>
+    <string name="locked_active">このデバイスは %1$s で承認されています。</string>
+    <string name="locked_pending">このデバイスは %1$s で承認待ちです。</string>
+    <string name="locked_inactive">このデバイスは %1$s のメンバーではありません。</string>
+    <string name="unlock_title">pasejo のロック解除</string>
+    <string name="unlock_subtitle">このデバイスでストアを開きます</string>
+
+    <string name="stores_title">ストア</string>
+    <string name="offline_notice">サーバーに接続できません。この電話が以前に読み取った値だけが利用でき、各読み取りはサーバーに再び接続できたときに報告されます。</string>
+    <string name="stores_empty">このデバイスと共有されたストアはまだありません。</string>
+    <string name="entries_filter">フィルター</string>
+    <string name="entry_hidden">••••••••</string>
+    <string name="entry_copied">コピーしました。クリップボードは %1$d 秒後に消去されます。</string>
+    <string name="entry_code">%1$s (%2$d 秒)</string>
+
+    <string name="reset_title">このデバイスを削除しますか?</string>
+    <string name="reset_message">この電話のデバイス鍵とサインインが削除されます。再度サインインすると、管理者の承認が必要な新しいデバイスが作成されます。</string>
+    <string name="restore_failed">保存されたデバイスを開けません: %1$s</string>
+
+    <string name="autofill_entry">pasejo で入力</string>
+    <string name="autofill_setup">pasejo はアプリやブラウザでログイン情報を入力できます。Chrome では、Chrome の設定で「別のサービスを使用して自動入力」も選択してください。</string>
+    <string name="autofill_no_save">pasejo はまだ新しいパスワードを保存しません。</string>
+    <string name="fill_checking">要求元を確認しています…</string>
+    <string name="fill_nothing">このフォームがどのサイトまたはアプリのものか pasejo には判断できません。</string>
+    <string name="fill_title">入力</string>
+    <string name="fill_for_site">%1$s 用</string>
+    <string name="fill_for_app">アプリ %1$s 用</string>
+    <string name="fill_no_matches">一致するエントリはありません。</string>
+    <string name="fill_lookalikes">警告: 似たドメイン (%1$s) のエントリがあります。フィッシングサイトの可能性があります。</string>
+    <string name="fill_confirm_title">このエントリを入力しますか?</string>
+    <string name="fill_confirm_message">%1$s は入力前に確認を求めています。%2$s。</string>
+    <string name="fill_empty">このエントリには、このフォームのフィールドに対応する値がありません。</string>
+
+    <string name="error_title">問題が発生しました</string>
+    <string name="error_network">サーバーに接続できません: %1$s</string>
+    <string name="error_refused">サーバーが拒否しました: %1$s</string>
+    <string name="error_verification">サーバーの応答を検証できないため、pasejo はそれを信頼しません: %1$s</string>
+    <string name="error_not_signed_in">サインアウトしています。もう一度サインインしてください。</string>
+    <string name="error_locked">pasejo はロックされています。</string>
+    <string name="error_not_found">エントリが存在しないか、一致しません。</string>
+    <string name="error_key">デバイス鍵を使用できません: %1$s</string>
+    <string name="error_insecure_key_store">この電話は鍵をソフトウェアでしか保管しないため、pasejo はここで鍵を保護できません。</string>
+
+    <string name="restriction_server_url">サーバー URL</string>
+    <string name="restriction_server_url_description">pasejo サーバーの https URL。</string>
+    <string name="restriction_organization">組織の識別子</string>
+    <string name="restriction_organization_description">このデバイスが参加する組織。</string>
+    <string name="restriction_genesis_hash">組織のフィンガープリント</string>
+    <string name="restriction_genesis_hash_description">組織のジェネシスのハッシュ。初回使用時に固定されます。</string>
+    <string name="restriction_checkpoint_key">チェックポイント鍵</string>
+    <string name="restriction_checkpoint_key_description">サーバーのチェックポイント鍵。初回使用時に固定されます。</string>
+    <string name="restriction_max_unlock_seconds">最長のロック解除時間</string>
+    <string name="restriction_max_unlock_seconds_description">ロック解除後にストアが開いたままになる秒数。</string>
+    <string name="restriction_allow_copy">コピーを許可</string>
+    <string name="restriction_allow_copy_description">パスワードとコードをクリップボードにコピーできるかどうか。</string>
+</resources>

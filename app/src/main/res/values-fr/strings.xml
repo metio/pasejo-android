@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<resources>
+    <string name="action_autofill">Utiliser pasejo pour la saisie automatique</string>
+    <string name="action_continue">Continuer</string>
+    <string name="action_copy_code">Copier le code</string>
+    <string name="action_copy_password">Copier le mot de passe</string>
+    <string name="action_fill">Remplir</string>
+    <string name="action_lock">Verrouiller</string>
+    <string name="action_reset">Retirer cet appareil</string>
+    <string name="action_retry">Réessayer</string>
+    <string name="action_reveal">Afficher</string>
+    <string name="action_show_code">Afficher le code</string>
+    <string name="action_sign_in">Se connecter</string>
+    <string name="action_unlock">Déverrouiller</string>
+
+    <string name="setup_title">Configurer pasejo</string>
+    <string name="setup_explanation">Saisissez le serveur, l’identifiant de l’organisation et l’empreinte de l’organisation qu’un administrateur vous a donnés. La clé de checkpoint est facultative ; si elle est indiquée, le serveur doit la présenter.</string>
+    <string name="setup_server">URL du serveur (https://…)</string>
+    <string name="setup_org">Identifiant de l’organisation</string>
+    <string name="setup_genesis">Empreinte de l’organisation</string>
+    <string name="setup_checkpoint">Clé de checkpoint (facultative)</string>
+    <string name="setup_creating">Création des clés de l’appareil et connexion au serveur…</string>
+    <string name="tier_hardware">Ce téléphone conserve les clés de l’appareil dans son matériel sécurisé.</string>
+    <string name="tier_sealed">Ce téléphone ne peut pas conserver ces types de clé dans son matériel sécurisé ; les clés de l’appareil sont donc scellées par des clés qu’il y conserve.</string>
+
+    <string name="sign_in_title">Se connecter</string>
+    <string name="sign_in_explanation">Connectez-vous à %1$s dans votre navigateur. Le navigateur revient ensuite à pasejo.</string>
+    <string name="sign_in_finishing">Finalisation de la connexion…</string>
+    <string name="join_running">Adhésion à l’organisation…</string>
+
+    <string name="locked_title">Verrouillé</string>
+    <string name="locked_checking">Vérification de l’approbation de cet appareil…</string>
+    <string name="locked_fingerprint">Empreinte de l’appareil, qu’un administrateur compare avant d’approuver :</string>
+    <string name="locked_active">Cet appareil est approuvé dans %1$s.</string>
+    <string name="locked_pending">Cet appareil attend une approbation dans %1$s.</string>
+    <string name="locked_inactive">Cet appareil n’est pas membre de %1$s.</string>
+    <string name="unlock_title">Déverrouiller pasejo</string>
+    <string name="unlock_subtitle">Ouvrir les coffres sur cet appareil</string>
+
+    <string name="stores_title">Coffres</string>
+    <string name="offline_notice">Le serveur est injoignable. Seules les valeurs que ce téléphone a lues auparavant sont disponibles, et chaque lecture est signalée dès que le serveur est de nouveau joignable.</string>
+    <string name="stores_empty">Aucun coffre n’a encore été partagé avec cet appareil.</string>
+    <string name="entries_filter">Filtrer</string>
+    <string name="entry_hidden">••••••••</string>
+    <string name="entry_copied">Copié. Le presse-papiers est vidé dans %1$d secondes.</string>
+    <string name="entry_code">%1$s (%2$d s)</string>
+
+    <string name="reset_title">Retirer cet appareil ?</string>
+    <string name="reset_message">Les clés de l’appareil et la connexion sur ce téléphone sont supprimées. Une nouvelle connexion crée un nouvel appareil qu’un administrateur doit approuver.</string>
+    <string name="restore_failed">L’appareil enregistré ne peut pas être ouvert : %1$s</string>
+
+    <string name="autofill_entry">Remplir avec pasejo</string>
+    <string name="autofill_setup">pasejo peut remplir les identifiants dans les apps et les navigateurs. Dans Chrome, sélectionnez aussi \"Saisie automatique avec un autre service\" dans les paramètres de Chrome.</string>
+    <string name="autofill_no_save">pasejo n’enregistre pas encore de nouveaux mots de passe.</string>
+    <string name="fill_checking">Vérification de l’auteur de la demande…</string>
+    <string name="fill_nothing">pasejo ne peut pas déterminer à quel site ou à quelle app appartient ce formulaire.</string>
+    <string name="fill_title">Remplir</string>
+    <string name="fill_for_site">Pour %1$s</string>
+    <string name="fill_for_app">Pour l’app %1$s</string>
+    <string name="fill_no_matches">Aucune entrée ne correspond.</string>
+    <string name="fill_lookalikes">Attention : des entrées existent pour des domaines similaires (%1$s). Il peut s’agir d’un site d’hameçonnage.</string>
+    <string name="fill_confirm_title">Remplir cette entrée ?</string>
+    <string name="fill_confirm_message">%1$s demande une confirmation avant d’être rempli. %2$s.</string>
+    <string name="fill_empty">L’entrée n’a pas de valeur pour les champs de ce formulaire.</string>
+
+    <string name="error_title">Une erreur est survenue</string>
+    <string name="error_network">Le serveur est injoignable : %1$s</string>
+    <string name="error_refused">Le serveur a refusé : %1$s</string>
+    <string name="error_verification">La réponse du serveur ne se vérifie pas, pasejo ne lui fait donc pas confiance : %1$s</string>
+    <string name="error_not_signed_in">Vous êtes déconnecté. Reconnectez-vous.</string>
+    <string name="error_locked">pasejo est verrouillé.</string>
+    <string name="error_not_found">L’entrée n’existe pas ou ne correspond pas.</string>
+    <string name="error_key">La clé de l’appareil ne peut pas être utilisée : %1$s</string>
+    <string name="error_insecure_key_store">Ce téléphone conserve les clés uniquement de manière logicielle ; pasejo ne peut donc pas les protéger ici.</string>
+
+    <string name="restriction_server_url">URL du serveur</string>
+    <string name="restriction_server_url_description">L’URL https du serveur pasejo.</string>
+    <string name="restriction_organization">Identifiant de l’organisation</string>
+    <string name="restriction_organization_description">L’organisation que rejoint cet appareil.</string>
+    <string name="restriction_genesis_hash">Empreinte de l’organisation</string>
+    <string name="restriction_genesis_hash_description">Le hash de la genèse de l’organisation, épinglé à la première utilisation.</string>
+    <string name="restriction_checkpoint_key">Clé de checkpoint</string>
+    <string name="restriction_checkpoint_key_description">La clé de checkpoint du serveur, épinglée à la première utilisation.</string>
+    <string name="restriction_max_unlock_seconds">Durée maximale de déverrouillage</string>
+    <string name="restriction_max_unlock_seconds_description">Secondes pendant lesquelles les coffres restent ouverts après un déverrouillage.</string>
+    <string name="restriction_allow_copy">Autoriser la copie</string>
+    <string name="restriction_allow_copy_description">Si les mots de passe et les codes peuvent être copiés dans le presse-papiers.</string>
+</resources>

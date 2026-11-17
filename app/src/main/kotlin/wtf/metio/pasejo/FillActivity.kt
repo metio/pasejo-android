@@ -13,6 +13,7 @@ import android.service.autofill.Field
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillManager
 import android.view.autofill.AutofillValue
+import wtf.metio.pasejo.core.DomainVerifier
 import wtf.metio.pasejo.core.FillCredential
 import wtf.metio.pasejo.core.FillMatch
 import wtf.metio.pasejo.core.FillRequest
@@ -61,12 +62,17 @@ class FillActivity : Activity() {
 
     private fun query(form: Form, request: FillRequest) {
         val device = app.device ?: return finish()
-        app.background({ device.query(request) }) { result ->
+        val caller = form.caller
+        val verifier = object : DomainVerifier {
+            override fun verified(domain: String) = app.links.verified(domain, caller.packageName, caller.certificates)
+        }
+        app.background({ device.query(request, verifier) }) { result ->
             result.onFailure { message(describe(it)) }
             result.onSuccess { found ->
                 val screen = Screen(this)
                 screen.title(getString(R.string.fill_title))
-                screen.text(describeRequest(request))
+                screen.text(describeRequest(found.request))
+                if (device.offline()) screen.text(getString(R.string.offline_notice))
                 if (found.matches.isEmpty()) {
                     screen.text(getString(R.string.fill_no_matches))
                     if (found.lookalikes.isNotEmpty()) {
@@ -79,7 +85,7 @@ class FillActivity : Activity() {
                         if (match.username.isNotEmpty()) append(" — ").append(match.username)
                         append(" (").append(match.storeLabel).append(')')
                     }
-                    screen.button(label) { choose(form, request, match) }
+                    screen.button(label) { choose(form, found.request, match) }
                 }
                 screen.button(getString(android.R.string.cancel)) { finish() }
                 screen.show()
@@ -108,7 +114,7 @@ class FillActivity : Activity() {
 
     private fun fill(form: Form, request: FillRequest, match: FillMatch) {
         val device = app.device ?: return finish()
-        app.background({ device.fill(request, match.store, match.name) }) { result ->
+        app.background({ device.fill(request, match.store, match.name).also { app.save() } }) { result ->
             result.onFailure { message(describe(it)) }
             result.onSuccess { credential ->
                 val dataset = dataset(form.targets, credential) ?: return@onSuccess message(getString(R.string.fill_empty))

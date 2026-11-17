@@ -137,9 +137,20 @@ androidComponents {
     }
 }
 
+val cargoServer by tasks.registering {
+    description = "Builds the pasejo server that the JVM tests run against."
+    inputs.dir(File(pasejoDir, "crates"))
+    inputs.file(File(pasejoDir, "Cargo.lock"))
+    outputs.file(cargoTarget.resolve("debug/pasejo-server"))
+    doLast {
+        run(listOf("cargo", "build", "--locked", "--package", "pasejo-server", "--bin", "pasejo-server"))
+    }
+}
+
 tasks.withType<Test>().configureEach {
-    dependsOn(cargoHost)
+    dependsOn(cargoHost, cargoServer)
     systemProperty("jna.library.path", cargoTarget.resolve("debug").path)
+    systemProperty("pasejo.server", cargoTarget.resolve("debug/pasejo-server").path)
 }
 
 dependencies {

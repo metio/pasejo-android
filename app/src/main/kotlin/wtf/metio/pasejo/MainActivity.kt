@@ -219,6 +219,7 @@ class MainActivity : Activity() {
         val device = app.device ?: return
         val screen = Screen(this)
         screen.title(getString(R.string.stores_title))
+        if (device.offline()) screen.text(getString(R.string.offline_notice))
         val stores = device.stores()
         if (stores.isEmpty()) screen.text(getString(R.string.stores_empty))
         for (each in stores) {
@@ -280,14 +281,14 @@ class MainActivity : Activity() {
         if (name in store.secrets) {
             val value = screen.text(getString(R.string.entry_hidden), monospace = true)
             screen.button(getString(R.string.action_reveal)) {
-                work({ device.reveal(store.id, name) }) { result ->
+                work({ device.reveal(store.id, name).also { app.save() } }) { result ->
                     result.onFailure { value.text = describe(it) }
                     result.onSuccess { value.text = it }
                 }
             }
             if (allowCopy) {
                 screen.button(getString(R.string.action_copy_password)) {
-                    work({ device.reveal(store.id, name).lineSequence().first() }) { result ->
+                    work({ device.reveal(store.id, name).also { app.save() }.lineSequence().first() }) { result ->
                         result.onFailure { value.text = describe(it) }
                         result.onSuccess {
                             Clipboard.copy(this, CLIP_LABEL, it)
@@ -302,7 +303,7 @@ class MainActivity : Activity() {
             screen.button(getString(R.string.action_show_code)) { showCode(code, store, name) }
             if (allowCopy) {
                 screen.button(getString(R.string.action_copy_code)) {
-                    work({ device.totp(store.id, name) }) { result ->
+                    work({ device.totp(store.id, name).also { app.save() } }) { result ->
                         result.onFailure { code.text = describe(it) }
                         result.onSuccess {
                             Clipboard.copy(this, CLIP_LABEL, it.code)
@@ -317,7 +318,7 @@ class MainActivity : Activity() {
 
     private fun showCode(view: TextView, store: StoreView, name: String) {
         val device = app.device ?: return
-        work({ device.totp(store.id, name) }) { result ->
+        work({ device.totp(store.id, name).also { app.save() } }) { result ->
             result.onFailure { view.text = describe(it) }
             result.onSuccess { code ->
                 view.text = getString(R.string.entry_code, code.code, code.remainingSeconds.toLong())
