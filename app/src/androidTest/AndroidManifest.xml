@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<!-- Components of the test APK, which runs in its own process: forms that
+     pasejo's autofill service sees as another app, and a device policy
+     controller that sets pasejo's managed configuration. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="wtf.metio.pasejo.testapp.LoginActivity"
+            android:exported="true" />
+        <activity
+            android:name="wtf.metio.pasejo.testapp.SearchActivity"
+            android:exported="true" />
+
+        <receiver
+            android:name="wtf.metio.pasejo.testapp.TestAdmin"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/test_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="wtf.metio.pasejo.testapp.PolicyReceiver"
+            android:exported="true" />
+    </application>
+</manifest>

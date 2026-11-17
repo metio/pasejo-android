@@ -43,7 +43,7 @@ The app compiles `pasejo-mobile` from a pasejo checkout next to this one (`../pa
 ./gradlew connectedDebugAndroidTest  # instrumented tests on a running emulator or phone
 ```
 
-The Gradle build cross-compiles the core for `arm64-v8a` and `x86_64` and generates the Kotlin bindings with UniFFI. The instrumented tests create keys without the authentication requirement, so they run on an emulator without a lock screen. Emulators keep keys in software, so the test that requires secure hardware runs only on a phone. CI (`.github/workflows/verify.yml`) builds against the `main` branch of metio/pasejo and runs both suites, the instrumented one on an API 36 emulator.
+The Gradle build cross-compiles the core for `arm64-v8a` and `x86_64` and generates the Kotlin bindings with UniFFI. The instrumented tests create keys without the authentication requirement, so they run on an emulator without a lock screen. The autofill tests make pasejo the system's autofill service, and the managed-configuration tests make the test APK device owner, which works only on a device without accounts, such as a fresh emulator; both restore the device afterwards. Emulators keep keys in software, so the test that requires secure hardware runs only on a phone. CI (`.github/workflows/verify.yml`) builds against the `main` branch of metio/pasejo and runs both suites, the instrumented one on an API 36 emulator.
 
 ## License
 
