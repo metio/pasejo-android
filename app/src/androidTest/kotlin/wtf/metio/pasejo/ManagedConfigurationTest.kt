@@ -21,6 +21,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +38,7 @@ class ManagedConfigurationTest {
         private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
         private val testPackage get() = instrumentation.context.packageName
         private var owner = false
+        private var refusal = ""
 
         private fun shell(command: String): String =
             instrumentation.uiAutomation.executeShellCommand(command).use { descriptor ->
@@ -49,7 +51,7 @@ class ManagedConfigurationTest {
             val admin = "$testPackage/wtf.metio.pasejo.testapp.TestAdmin"
             val output = shell("dpm set-device-owner $admin")
             owner = output.contains("Success") || shell("dumpsys device_policy").contains("admin=ComponentInfo{$admin}")
-            assumeTrue("the test APK cannot become device owner: $output", owner)
+            refusal = output.trim()
         }
 
         @AfterClass
@@ -93,8 +95,13 @@ class ManagedConfigurationTest {
         assertEquals(error, PolicyReceiver.DONE, code)
     }
 
+    @Before
+    fun requireDeviceOwner() = assumeTrue("the test APK cannot become device owner: $refusal", owner)
+
     @After
-    fun clear() = restrict(Bundle())
+    fun clear() {
+        if (owner) restrict(Bundle())
+    }
 
     @Test
     fun withoutRestrictionsThePersonChooses() {
