@@ -100,7 +100,8 @@ class AutofillTest {
         instrumentation.targetContext.startActivity(
             Intent(instrumentation.targetContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
-        val server = ui.wait(Until.findObject(By.clazz("android.widget.EditText")), TIMEOUT)
+        val pasejo = instrumentation.targetContext.packageName
+        val server = ui.wait(Until.findObject(By.pkg(pasejo).clazz("android.widget.EditText")), TIMEOUT)
         assertNotNull(server)
         server.click()
         assertNull(ui.wait(Until.findObject(By.text(entry)), ABSENCE))
