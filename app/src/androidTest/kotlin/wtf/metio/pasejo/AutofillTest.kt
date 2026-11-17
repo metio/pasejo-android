@@ -49,11 +49,15 @@ class AutofillTest {
         }
     }
 
+    /**
+     * Starts the form and waits for its window, so a field found afterwards
+     * belongs to it rather than to the form an earlier test left on screen.
+     */
     private fun open(activity: Class<*>) {
-        instrumentation.context.startActivity(
-            Intent().setClassName(testPackage, activity.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
-        )
+        val start = Intent().setClassName(testPackage, activity.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        assertTrue("no window for ${activity.simpleName}", ui.performActionAndWait({ instrumentation.context.startActivity(start) }, Until.newWindow(), TIMEOUT))
         assertNotNull(ui.wait(Until.hasObject(By.pkg(testPackage).depth(0)), TIMEOUT))
+        ui.waitForIdle()
     }
 
     private fun focus(description: String) {
