@@ -4,16 +4,21 @@
 package wtf.metio.pasejo
 
 import android.content.Intent
+import android.os.SystemClock
+import android.view.autofill.AutofillManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import org.junit.After
+import org.junit.AfterClass
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import wtf.metio.pasejo.testapp.LoginActivity
@@ -30,23 +35,13 @@ class AutofillTest {
     private val ui = UiDevice.getInstance(instrumentation)
     private val testPackage = instrumentation.context.packageName
     private val entry get() = instrumentation.targetContext.getString(R.string.autofill_entry)
-    private var previous: String = ""
 
     @Before
-    fun usePasejo() {
-        previous = ui.executeShellCommand("settings get secure autofill_service").trim()
-        ui.executeShellCommand("settings put secure autofill_service ${instrumentation.targetContext.packageName}/${PasejoAutofillService::class.java.name}")
-        assertNull((instrumentation.targetContext.applicationContext as PasejoApp).device)
-    }
+    fun noDevice() = assertNull((instrumentation.targetContext.applicationContext as PasejoApp).device)
 
     @After
-    fun restore() {
+    fun dismiss() {
         ui.pressBack()
-        if (previous.isEmpty() || previous == "null") {
-            ui.executeShellCommand("settings delete secure autofill_service")
-        } else {
-            ui.executeShellCommand("settings put secure autofill_service $previous")
-        }
     }
 
     /**
@@ -66,18 +61,30 @@ class AutofillTest {
         field.click()
     }
 
+    /**
+     * pasejo's entry on the login form. On a slow emulator a single focus
+     * does not always bring up the suggestion, so the form opens again
+     * before the entry counts as missing.
+     */
+    private fun loginEntry(): UiObject2? {
+        repeat(ATTEMPTS) {
+            open(LoginActivity::class.java)
+            focus("username")
+            ui.wait(Until.findObject(By.text(entry)), TIMEOUT)?.let { return it }
+        }
+        return null
+    }
+
     @Test
     fun aLoginFormOffersPasejo() {
-        open(LoginActivity::class.java)
-        focus("username")
-        assertNotNull("no autofill entry", ui.wait(Until.findObject(By.text(entry)), TIMEOUT))
+        assertNotNull("no autofill entry", loginEntry())
     }
 
     @Test
     fun choosingTheEntryWithoutDeviceFillsNothing() {
-        open(LoginActivity::class.java)
-        focus("username")
-        ui.wait(Until.findObject(By.text(entry)), TIMEOUT).click()
+        val offered = loginEntry()
+        assertNotNull("no autofill entry", offered)
+        offered!!.click()
         // The fill activity opens and, without a device, finishes at once.
         assertNotNull(ui.wait(Until.hasObject(By.desc("username")), TIMEOUT))
         ui.waitForIdle()
@@ -88,9 +95,7 @@ class AutofillTest {
 
     @Test
     fun aFormWithoutLoginFieldsOffersNothing() {
-        open(LoginActivity::class.java)
-        focus("username")
-        assertNotNull("no autofill entry on the control form", ui.wait(Until.findObject(By.text(entry)), TIMEOUT))
+        assertNotNull("no autofill entry on the control form", loginEntry())
         open(SearchActivity::class.java)
         focus("search")
         assertNull(ui.wait(Until.findObject(By.text(entry)), ABSENCE))
@@ -98,9 +103,7 @@ class AutofillTest {
 
     @Test
     fun pasejoOffersNothingOnItsOwnScreens() {
-        open(LoginActivity::class.java)
-        focus("username")
-        assertNotNull("no autofill entry on the control form", ui.wait(Until.findObject(By.text(entry)), TIMEOUT))
+        assertNotNull("no autofill entry on the control form", loginEntry())
         instrumentation.targetContext.startActivity(
             Intent(instrumentation.targetContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
@@ -114,5 +117,37 @@ class AutofillTest {
     companion object {
         private const val TIMEOUT = 10_000L
         private const val ABSENCE = 3_000L
+        private const val ATTEMPTS = 3
+        private var previous = ""
+
+        private fun shell(command: String): String =
+            UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).executeShellCommand(command).trim()
+
+        /**
+         * pasejo stays the autofill service for the whole class, and the
+         * tests start only once the system's autofill manager reports
+         * pasejo's service enabled.
+         */
+        @BeforeClass
+        @JvmStatic
+        fun usePasejo() {
+            val target = InstrumentationRegistry.getInstrumentation().targetContext
+            previous = shell("settings get secure autofill_service")
+            shell("settings put secure autofill_service ${target.packageName}/${PasejoAutofillService::class.java.name}")
+            val autofill = target.getSystemService(AutofillManager::class.java)
+            val deadline = SystemClock.uptimeMillis() + TIMEOUT
+            while (!autofill.hasEnabledAutofillServices() && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
+            assertTrue("pasejo is not the autofill service", autofill.hasEnabledAutofillServices())
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun restore() {
+            if (previous.isEmpty() || previous == "null") {
+                shell("settings delete secure autofill_service")
+            } else {
+                shell("settings put secure autofill_service $previous")
+            }
+        }
     }
 }
