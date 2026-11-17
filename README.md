@@ -45,6 +45,17 @@ gradle connectedDebugAndroidTest  # instrumented tests on a running emulator or 
 
 The Gradle build cross-compiles the core for `arm64-v8a` and `x86_64` and generates the Kotlin bindings with UniFFI. The instrumented tests create keys without the authentication requirement, so they run on an emulator without a lock screen. The autofill tests make pasejo the system's autofill service, and the managed-configuration tests make the test APK device owner, which works only on a device without accounts, such as a fresh emulator; both restore the device afterwards. Emulators keep keys in software, so the test that requires secure hardware runs only on a phone. CI (`.github/workflows/verify.yml`) builds against the `main` branch of metio/pasejo and runs both suites, the instrumented one on an API 36 emulator.
 
+## Releases
+
+A release is a tag `v<versionName>`:
+
+1. Raise `versionCode` and set `versionName` in `app/build.gradle.kts`.
+2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, at most 500 characters.
+3. Point `PASEJO_REF` in `.github/workflows/release.yml` at the pasejo commit to build against.
+4. Merge, then push the tag `v<versionName>` on that commit.
+
+`.github/workflows/release.yml` builds the APK, signs it with the release key and publishes it with a `SHA256SUMS` file signed by cosign (keyless, a Sigstore bundle next to it). The APK is signed by the certificate with SHA-256 `ff117c4cada7bdb1c000989519c95e3e2d0f0611520302495615346052d8a3ed`; check a download with `apksigner verify --print-certs`. The store listing for F-Droid lives in `fastlane/metadata/android/`.
+
 ## License
 
 0BSD, see `LICENSES/0BSD.txt`.

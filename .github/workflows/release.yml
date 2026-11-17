@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: The pasejo Authors
+# SPDX-License-Identifier: 0BSD
+
+# Pushing a tag `v<versionName>` builds the release APK, signs it with the
+# release key, and publishes it with a SHA256SUMS file signed by cosign.
+# The key comes from the secrets ANDROID_KEYSTORE (the PKCS#12 keystore,
+# base64) and ANDROID_KEYSTORE_PASSWORD; the signed APK must carry the
+# certificate named in SIGNER_SHA256, which F-Droid checks as well.
+
+name: Release
+on:
+  push:
+    tags: [ "v*" ]
+permissions:
+  contents: read
+
+env:
+  # The pasejo revision whose pasejo-mobile the release builds.
+  PASEJO_REF: 38ce8a61fdd9dd9f13ecfe83bb6baebcb26e4677
+  NDK_VERSION: 30.0.16248370
+  BUILD_TOOLS: 36.0.0
+  SIGNER_SHA256: ff117c4cada7bdb1c000989519c95e3e2d0f0611520302495615346052d8a3ed
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      id-token: write # cosign keyless sign-blob
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check the tag against the version
+        run: |
+          version=$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME does not match versionName $version"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Checkout pasejo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: metio/pasejo
+          ref: ${{ env.PASEJO_REF }}
+          path: pasejo
+          persist-credentials: false
+      - uses: metio/ci/breto@00adafd0fe1924f57325d9dd264d5d731fb099ad # 2026.11.4082509
+        with:
+          registries: github:metio/toolchains
+      - name: Set up Android
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "ndk;${NDK_VERSION}" "build-tools;${BUILD_TOOLS}"
+      - name: Set up Rust targets
+        working-directory: pasejo
+        run: rustup target add aarch64-linux-android x86_64-linux-android
+      - name: Build
+        run: gradle --no-daemon -Ppasejo.dir=pasejo assembleRelease
+      - name: Sign
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          tools="$ANDROID_HOME/build-tools/$BUILD_TOOLS"
+          keystore="$RUNNER_TEMP/release.p12"
+          trap 'rm -f "$keystore"' EXIT
+          (umask 077; echo "$ANDROID_KEYSTORE" | base64 -d > "$keystore")
+          mkdir dist
+          apk="dist/pasejo-$VERSION.apk"
+          "$tools/apksigner" sign --ks "$keystore" --ks-pass env:ANDROID_KEYSTORE_PASSWORD --ks-key-alias pasejo \
+            --out "$apk" app/build/outputs/apk/release/app-release-unsigned.apk
+          rm -f "$apk.idsig"
+          signer=$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          [ "$signer" = "$SIGNER_SHA256" ] || { echo "::error::signed by $signer instead of $SIGNER_SHA256"; exit 1; }
+      - name: Calculate checksums
+        working-directory: dist
+        run: sha256sum ./*.apk > SHA256SUMS
+      - uses: metio/ci/cosign-sign-blob@6e8776dc59abdfffa793903f100e89f1aacb9c2e # 2026.11.2023135
+        with:
+          file: dist/SHA256SUMS
+      - name: Create the release
+        run: |
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes \
+            --notes "Built against metio/pasejo@${PASEJO_REF}. The APK is signed by the certificate with SHA-256 \`${SIGNER_SHA256}\`." \
+            dist/*
+        env:
+          GH_TOKEN: ${{ github.token }}

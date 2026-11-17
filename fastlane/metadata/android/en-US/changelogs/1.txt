@@ -1,0 +1,1 @@
+First release: sign-in, enrollment, stores, reveal, TOTP codes, autofill, offline reads and managed configuration.

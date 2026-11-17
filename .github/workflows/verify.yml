@@ -53,7 +53,7 @@ jobs:
         working-directory: pasejo
         run: rustup target add aarch64-linux-android x86_64-linux-android
       - name: Build and test
-        run: gradle --no-daemon -Ppasejo.dir=pasejo assembleDebug testDebugUnitTest
+        run: gradle --no-daemon -Ppasejo.dir=pasejo assembleDebug assembleRelease testDebugUnitTest
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

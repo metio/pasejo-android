@@ -1,0 +1,13 @@
+pasejo is a password manager for teams that encrypts every secret with age. This app opens the stores of a pasejo server on an Android phone.
+
+The app signs in through the system browser and enrolls the phone as a device that an admin of the organization approves. It then lists stores and entries, reveals secrets, shows TOTP codes, and fills logins in apps and browsers through Android's autofill framework. It reads only: editing secrets and approving devices are done with the pasejo CLI.
+
+Security:
+* The signing key and the age identity are generated in the phone's secure hardware. On phones whose key store lacks Curve25519, they are generated in memory and sealed under hardware keys. The app refuses to enroll when the key store keeps any key in software, and keys are never backed up.
+* Unlocking needs a biometric or the screen lock. Store keys stay in memory for five minutes and are dropped when the screen turns off.
+* The app verifies every answer of the server against keys pinned on first use, so a server that withholds, swaps or rolls back data is detected.
+* Secret values are fetched per reveal, so the server records every read. Offline reads are possible only where the organization allows them, and they are reported on the next online unlock.
+* Browsers receive credentials only for the domain they report, and only from Google's list of privileged browsers. Apps receive credentials for domains whose Digital Asset Links name them, or for entries that name the app and its signing certificate.
+* Screens are excluded from screenshots and the recents list. Copied passwords are marked sensitive and cleared after 45 seconds.
+
+The app needs Android 13 or later, a secure lock screen, and a pasejo server. A device policy controller can preset the server and organization through managed configuration.
