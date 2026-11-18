@@ -25,7 +25,7 @@ android {
         minSdk = minSdkLevel
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "dev"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += abis.keys }
     }

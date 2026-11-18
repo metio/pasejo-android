@@ -1,18 +1,27 @@
 # SPDX-FileCopyrightText: The pasejo Authors
 # SPDX-License-Identifier: 0BSD
 
-# Pushing a tag `v<versionName>` builds the release APK, signs it with the
-# release key, and publishes it with a SHA256SUMS file signed by cosign.
-# The key comes from the secrets ANDROID_KEYSTORE (the PKCS#12 keystore,
-# base64) and ANDROID_KEYSTORE_PASSWORD; the signed APK must carry the
-# certificate named in SIGNER_SHA256, which F-Droid checks as well.
+# A push to main releases when the app's sources, build files or this workflow
+# changed since the last release. The version is the calendar version
+# metio/ci/calver computes; dev/set-version.sh writes it and its version code
+# into app/build.gradle.kts in a release commit on top of the pushed commit.
+# That commit is tagged with the version and never merged into main, so
+# F-Droid finds literal versions in every tagged build file. The APK is signed
+# with the release key from the secrets ANDROID_KEYSTORE (the PKCS#12
+# keystore, base64) and ANDROID_KEYSTORE_PASSWORD, must carry the certificate
+# named in SIGNER_SHA256, which F-Droid checks as well, and is published with
+# a SHA256SUMS file signed by cosign.
 
 name: Release
 on:
   push:
-    tags: [ "v*" ]
+    branches: [ main ]
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 env:
   # The pasejo revision whose pasejo-mobile the release builds.
@@ -22,23 +31,65 @@ env:
   SIGNER_SHA256: ff117c4cada7bdb1c000989519c95e3e2d0f0611520302495615346052d8a3ed
 
 jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      needed: ${{ steps.gate.outputs.needed }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: gate
+        name: Check for changes since the last release
+        # Release tags sit on release commits outside main, so the last release
+        # is the highest tag, and its parent is the main commit it was cut from.
+        run: |
+          set -euo pipefail
+          last=$(git tag --list '20[0-9][0-9].*' --sort=-v:refname | head -n 1)
+          if [ -z "$last" ]; then
+            echo "no release yet"
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          status=0
+          git diff --quiet "$last^" HEAD -- app build.gradle.kts settings.gradle.kts gradle.properties .github/workflows/release.yml || status=$?
+          case "$status" in
+            0) echo "nothing to release since $last"; echo "needed=false" >> "$GITHUB_OUTPUT" ;;
+            1) echo "changes since $last"; echo "needed=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::git diff failed with status $status"; exit "$status" ;;
+          esac
+      - id: version
+        if: steps.gate.outputs.needed == 'true'
+        uses: metio/ci/calver@6e8776dc59abdfffa793903f100e89f1aacb9c2e # 2026.11.2023135
+
   release:
     name: Release
+    needs: prepare
+    if: needs.prepare.outputs.needed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: write
       id-token: write # cosign keyless sign-blob
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Check the tag against the version
+      - name: Write the version
         run: |
-          version=$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' app/build.gradle.kts)
-          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME does not match versionName $version"; exit 1; }
-          echo "VERSION=$version" >> "$GITHUB_ENV"
+          set -euo pipefail
+          code=$(dev/set-version.sh "$VERSION")
+          echo "version $VERSION, version code $code"
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet --all --message "chore: release $VERSION"
       - name: Checkout pasejo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -81,9 +132,17 @@ jobs:
       - uses: metio/ci/cosign-sign-blob@6e8776dc59abdfffa793903f100e89f1aacb9c2e # 2026.11.2023135
         with:
           file: dist/SHA256SUMS
+      - name: Tag the release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git tag "$VERSION"
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w 0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin "refs/tags/$VERSION"
       - name: Create the release
         run: |
-          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes \
+          gh release create "$VERSION" --verify-tag --title "$VERSION" --generate-notes \
             --notes "Built against metio/pasejo@${PASEJO_REF}. The APK is signed by the certificate with SHA-256 \`${SIGNER_SHA256}\`." \
             dist/*
         env:

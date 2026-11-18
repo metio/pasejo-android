@@ -47,12 +47,7 @@ The Gradle build cross-compiles the core for `arm64-v8a` and `x86_64` and genera
 
 ## Releases
 
-A release is a tag `v<versionName>`:
-
-1. Raise `versionCode` and set `versionName` in `app/build.gradle.kts`.
-2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, at most 500 characters.
-3. Point `PASEJO_REF` in `.github/workflows/release.yml` at the pasejo commit to build against.
-4. Merge, then push the tag `v<versionName>` on that commit.
+A push to `main` that changes `app/`, the Gradle build files or `.github/workflows/release.yml` releases the app. The version is a calendar version, the UTC date and time of the release as `YYYY.M.DHHMMSS` (such as `2026.11.18071819`), and the version code counts the seconds from 2026-01-01 UTC to that time, so every release has a larger one. `main` carries the placeholder version `dev`: the release workflow writes the version into `app/build.gradle.kts` with `dev/set-version.sh`, commits that on top of the pushed commit and tags the commit with the version, without merging it into `main`. To build against another pasejo commit, point `PASEJO_REF` in `.github/workflows/release.yml` at it.
 
 `.github/workflows/release.yml` builds the APK, signs it with the release key and publishes it with a `SHA256SUMS` file signed by cosign (keyless, a Sigstore bundle next to it). The APK is signed by the certificate with SHA-256 `ff117c4cada7bdb1c000989519c95e3e2d0f0611520302495615346052d8a3ed`; check a download with `apksigner verify --print-certs`. The store listing for F-Droid lives in `fastlane/metadata/android/`.
 
