@@ -41,6 +41,9 @@
     <string name="locked_inactive">Este dispositivo no es miembro de %1$s.</string>
     <string name="unlock_title">Desbloquear pasejo</string>
     <string name="unlock_subtitle">Abrir los almacenes en este dispositivo</string>
+    <string name="unlock_period">Mantener desbloqueado durante</string>
+    <string name="unlock_minutes">%1$d min</string>
+    <string name="unlock_seconds">%1$d s</string>
 
     <string name="stores_title">Almacenes</string>
     <string name="offline_notice">No se puede contactar con el servidor. Solo están disponibles los valores que este teléfono leyó antes, y cada lectura se notifica cuando el servidor vuelve a estar disponible.</string>

@@ -41,6 +41,9 @@
     <string name="locked_inactive">이 기기는 %1$s의 구성원이 아닙니다.</string>
     <string name="unlock_title">pasejo 잠금 해제</string>
     <string name="unlock_subtitle">이 기기에서 저장소 열기</string>
+    <string name="unlock_period">잠금 해제 유지 시간</string>
+    <string name="unlock_minutes">%1$d분</string>
+    <string name="unlock_seconds">%1$d초</string>
 
     <string name="stores_title">저장소</string>
     <string name="offline_notice">서버에 연결할 수 없습니다. 이 휴대전화가 이전에 읽은 값만 사용할 수 있으며, 각 읽기는 서버에 다시 연결되면 보고됩니다.</string>

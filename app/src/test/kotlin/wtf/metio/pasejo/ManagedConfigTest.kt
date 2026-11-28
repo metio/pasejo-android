@@ -38,6 +38,18 @@ class ManagedConfigTest {
     }
 
     @Test
+    fun withoutPolicyEveryUsualPeriodCanBeChosen() =
+        assertEquals(listOf(60, 300, 900, 3600), ManagedConfig().unlockChoices())
+
+    @Test
+    fun thePolicyRemovesLongerChoices() =
+        assertEquals(listOf(60, 300), ManagedConfig(maxUnlockSeconds = 600).unlockChoices())
+
+    @Test
+    fun aCapBelowEveryChoiceIsTheOnlyChoice() =
+        assertEquals(listOf(30), ManagedConfig(maxUnlockSeconds = 30).unlockChoices())
+
+    @Test
     fun thePolicyCapsTheUnlockPeriod() {
         assertEquals(300, ManagedConfig().unlockSeconds())
         assertEquals(60, ManagedConfig(maxUnlockSeconds = 60).unlockSeconds())

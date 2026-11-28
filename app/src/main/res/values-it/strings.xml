@@ -41,6 +41,9 @@
     <string name="locked_inactive">Questo dispositivo non è membro di %1$s.</string>
     <string name="unlock_title">Sblocca pasejo</string>
     <string name="unlock_subtitle">Apri gli archivi su questo dispositivo</string>
+    <string name="unlock_period">Resta sbloccato per</string>
+    <string name="unlock_minutes">%1$d min</string>
+    <string name="unlock_seconds">%1$d s</string>
 
     <string name="stores_title">Archivi</string>
     <string name="offline_notice">Il server non è raggiungibile. Sono disponibili solo i valori che questo telefono ha letto in precedenza, e ogni lettura viene segnalata appena il server torna raggiungibile.</string>

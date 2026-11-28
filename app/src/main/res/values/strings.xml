@@ -43,6 +43,9 @@
     <string name="locked_inactive">This device is not a member of %1$s.</string>
     <string name="unlock_title">Unlock pasejo</string>
     <string name="unlock_subtitle">Open the stores on this device</string>
+    <string name="unlock_period">Stay unlocked for</string>
+    <string name="unlock_minutes">%1$d min</string>
+    <string name="unlock_seconds">%1$d s</string>
 
     <string name="stores_title">Stores</string>
     <string name="offline_notice">The server cannot be reached. Only values this phone read before are available, and each read is reported once the server is reachable again.</string>

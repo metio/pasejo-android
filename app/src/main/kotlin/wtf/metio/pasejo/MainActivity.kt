@@ -30,7 +30,13 @@ sealed interface Route {
     data class Setup(val server: SetupField, val org: SetupField, val genesis: SetupField, val checkpoint: SetupField, val tier: Tier) : Route
     data class SignIn(val server: String) : Route
     data class Locked(val fingerprint: String, val command: String, val tier: Tier?) : Route
-    data class Stores(val stores: List<StoreView>, val offline: Boolean, val offerAutofill: Boolean) : Route
+    data class Stores(
+        val stores: List<StoreView>,
+        val offline: Boolean,
+        val offerAutofill: Boolean,
+        val unlockChoices: List<Int>,
+        val unlockSeconds: Int,
+    ) : Route
     data class Entries(val store: StoreView) : Route
     data class Entry(val store: StoreView, val name: String, val allowCopy: Boolean) : Route
 }
@@ -102,6 +108,9 @@ class MainActivity : ComponentActivity() {
                 current.stores,
                 current.offline,
                 current.offerAutofill,
+                current.unlockChoices,
+                current.unlockSeconds,
+                onChooseUnlock = { app.chosenUnlockSeconds = it; render() },
                 onOpen = { store = it; render() },
                 onAutofill = ::offerAutofill,
                 onLock = { app.lock(); render() },
@@ -175,7 +184,7 @@ class MainActivity : ComponentActivity() {
             !device.signedIn() -> Route.SignIn(device.serverUrl())
             device.organization() == null -> return join()
             !app.unlocked() -> return locked()
-            store == null -> Route.Stores(device.stores(), device.offline(), autofillMissing())
+            store == null -> Route.Stores(device.stores(), device.offline(), autofillMissing(), app.managed.unlockChoices(), app.unlockSeconds())
             entry == null -> Route.Entries(store!!)
             else -> Route.Entry(store!!, entry!!, app.managed.allowCopy)
         }

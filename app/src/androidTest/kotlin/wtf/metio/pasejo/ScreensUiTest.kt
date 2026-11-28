@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
@@ -109,6 +110,24 @@ class ScreensUiTest {
         unlock.assertIsNotEnabled()
         status = LockStatus(text(R.string.locked_active, "metio"), canUnlock = true)
         unlock.assertIsEnabled()
+    }
+
+    @Test
+    fun theUnlockPeriodIsChosenAmongThePolicysChoices() {
+        var chosen: Int? = null
+        compose.setContent {
+            PasejoTheme {
+                StoresScreen(
+                    listOf(store), offline = false, offerAutofill = false,
+                    unlockChoices = ManagedConfig(maxUnlockSeconds = 600).unlockChoices(), unlockSeconds = 300,
+                    onChooseUnlock = { chosen = it }, onOpen = {}, onAutofill = {}, onLock = {},
+                )
+            }
+        }
+        compose.onNodeWithText(text(R.string.unlock_minutes, 5)).assertIsSelected()
+        compose.onNodeWithText(text(R.string.unlock_minutes, 15)).assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.unlock_minutes, 1)).performClick()
+        assertEquals(60, chosen)
     }
 
     @Test

@@ -41,6 +41,9 @@
     <string name="locked_inactive">このデバイスは %1$s のメンバーではありません。</string>
     <string name="unlock_title">pasejo のロック解除</string>
     <string name="unlock_subtitle">このデバイスでストアを開きます</string>
+    <string name="unlock_period">ロック解除を維持する時間</string>
+    <string name="unlock_minutes">%1$d 分</string>
+    <string name="unlock_seconds">%1$d 秒</string>
 
     <string name="stores_title">ストア</string>
     <string name="offline_notice">サーバーに接続できません。この電話が以前に読み取った値だけが利用でき、各読み取りはサーバーに再び接続できたときに報告されます。</string>

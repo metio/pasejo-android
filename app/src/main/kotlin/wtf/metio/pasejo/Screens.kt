@@ -25,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -198,6 +199,9 @@ fun StoresScreen(
     stores: List<StoreView>,
     offline: Boolean,
     offerAutofill: Boolean,
+    unlockChoices: List<Int>,
+    unlockSeconds: Int,
+    onChooseUnlock: (Int) -> Unit,
     onOpen: (StoreView) -> Unit,
     onAutofill: () -> Unit,
     onLock: () -> Unit,
@@ -226,6 +230,20 @@ fun StoresScreen(
             }
         }
     }
+    ElevatedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionTitle(stringResource(R.string.unlock_period))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (seconds in unlockChoices) {
+                    FilterChip(
+                        selected = seconds == unlockSeconds,
+                        onClick = { onChooseUnlock(seconds) },
+                        label = { Text(unlockLabel(seconds)) },
+                    )
+                }
+            }
+        }
+    }
     if (offerAutofill) {
         ElevatedCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -235,6 +253,10 @@ fun StoresScreen(
         }
     }
 }
+
+@Composable
+private fun unlockLabel(seconds: Int): String =
+    if (seconds % 60 == 0) stringResource(R.string.unlock_minutes, seconds / 60) else stringResource(R.string.unlock_seconds, seconds)
 
 @Composable
 fun EntriesScreen(store: StoreView, onOpen: (String) -> Unit, onBack: () -> Unit) =
