@@ -4,18 +4,27 @@
 package wtf.metio.pasejo
 
 import android.app.KeyguardManager
+import android.view.View
 import android.view.WindowManager
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeFalse
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
+    @get:Rule
+    val compose = createEmptyComposeRule()
+
     @Test
     fun aFreshInstallationShowsTheSetupAndKeepsScreenshotsOut() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -24,14 +33,10 @@ class MainActivityTest {
                 assertNull(app.device)
                 val flags = activity.window.attributes.flags
                 assertTrue(flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
-                val texts = mutableListOf<String>()
-                fun collect(view: android.view.View) {
-                    if (view is android.widget.TextView) texts += view.text.toString()
-                    if (view is android.view.ViewGroup) for (i in 0 until view.childCount) collect(view.getChildAt(i))
-                }
-                collect(activity.window.decorView)
-                assertTrue(texts.toString(), activity.getString(R.string.setup_title) in texts)
+                assertEquals(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS, activity.window.decorView.importantForAutofill)
             }
+            val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+            compose.onNodeWithText(context.getString(R.string.setup_title)).assertIsDisplayed()
         }
     }
 

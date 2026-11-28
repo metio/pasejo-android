@@ -3,8 +3,6 @@
 
 package wtf.metio.pasejo
 
-import android.app.Activity
-import android.app.AlertDialog
 import android.app.assist.AssistStructure
 import android.content.Intent
 import android.os.Bundle
@@ -13,10 +11,19 @@ import android.service.autofill.Field
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillManager
 import android.view.autofill.AutofillValue
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import wtf.metio.pasejo.core.DomainVerifier
 import wtf.metio.pasejo.core.FillCredential
 import wtf.metio.pasejo.core.FillMatch
 import wtf.metio.pasejo.core.FillRequest
+import wtf.metio.pasejo.core.QueryResult
 
 /**
  * Fills one login form: reads the form again from the structure the
@@ -25,16 +32,26 @@ import wtf.metio.pasejo.core.FillRequest
  * chosen credential as a dataset. Secrets that ask for it are confirmed
  * first.
  */
-class FillActivity : Activity() {
+class FillActivity : ComponentActivity() {
     private val app get() = application as PasejoApp
 
+    /** A message, or the matches of one query with the match waiting for confirmation. */
+    private var text by mutableStateOf<String?>(null)
+    private var found by mutableStateOf<QueryResult?>(null)
+    private var confirming by mutableStateOf<FillMatch?>(null)
+    private var offline by mutableStateOf(false)
+    private var form: Form? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         secure()
         setResult(RESULT_CANCELED)
+        setContent { PasejoTheme { Content() } }
         val structure = intent.getParcelableExtra(AutofillManager.EXTRA_ASSIST_STRUCTURE, AssistStructure::class.java)
         val form = structure?.let { Forms.read(this, it) }
         if (form == null || app.device == null) return finish()
+        this.form = form
         message(getString(R.string.fill_checking))
         val browser = Browsers.trusted(form.caller.packageName, form.caller.certificates)
         app.background({
@@ -54,11 +71,40 @@ class FillActivity : Activity() {
         }
     }
 
-    private fun message(text: String) = Screen(this).apply {
-        title(getString(R.string.app_name))
-        text(text)
-        button(getString(android.R.string.cancel)) { finish() }
-    }.show()
+    @Composable
+    private fun Content() {
+        val result = found
+        val form = form
+        when {
+            result != null && form != null -> FillPickerScreen(
+                request = describeRequest(result.request),
+                offline = offline,
+                matches = result.matches,
+                lookalikes = result.lookalikes,
+                onChoose = { choose(form, result.request, it) },
+                onCancel = ::finish,
+            )
+            else -> FillMessageScreen(text.orEmpty(), ::finish)
+        }
+        val match = confirming
+        if (match != null && result != null && form != null) {
+            ConfirmDialog(
+                title = stringResource(R.string.fill_confirm_title),
+                text = stringResource(R.string.fill_confirm_message, match.name, describeRequest(result.request)),
+                confirm = stringResource(R.string.action_fill),
+                onConfirm = {
+                    confirming = null
+                    fill(form, result.request, match)
+                },
+                onDismiss = { confirming = null },
+            )
+        }
+    }
+
+    private fun message(text: String) {
+        found = null
+        this.text = text
+    }
 
     private fun query(form: Form, request: FillRequest) {
         val device = app.device ?: return finish()
@@ -68,27 +114,9 @@ class FillActivity : Activity() {
         }
         app.background({ device.query(request, verifier) }) { result ->
             result.onFailure { message(describe(it)) }
-            result.onSuccess { found ->
-                val screen = Screen(this)
-                screen.title(getString(R.string.fill_title))
-                screen.text(describeRequest(found.request))
-                if (device.offline()) screen.text(getString(R.string.offline_notice))
-                if (found.matches.isEmpty()) {
-                    screen.text(getString(R.string.fill_no_matches))
-                    if (found.lookalikes.isNotEmpty()) {
-                        screen.text(getString(R.string.fill_lookalikes, found.lookalikes.joinToString(", ")))
-                    }
-                }
-                for (match in found.matches) {
-                    val label = buildString {
-                        append(match.name)
-                        if (match.username.isNotEmpty()) append(" — ").append(match.username)
-                        append(" (").append(match.storeLabel).append(')')
-                    }
-                    screen.button(label) { choose(form, found.request, match) }
-                }
-                screen.button(getString(android.R.string.cancel)) { finish() }
-                screen.show()
+            result.onSuccess {
+                offline = device.offline()
+                found = it
             }
         }
     }
@@ -103,13 +131,7 @@ class FillActivity : Activity() {
     }
 
     private fun choose(form: Form, request: FillRequest, match: FillMatch) {
-        if (!match.confirm) return fill(form, request, match)
-        AlertDialog.Builder(this)
-            .setTitle(R.string.fill_confirm_title)
-            .setMessage(getString(R.string.fill_confirm_message, match.name, describeRequest(request)))
-            .setPositiveButton(R.string.action_fill) { _, _ -> fill(form, request, match) }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        if (match.confirm) confirming = match else fill(form, request, match)
     }
 
     private fun fill(form: Form, request: FillRequest, match: FillMatch) {

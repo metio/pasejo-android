@@ -3,6 +3,7 @@
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
     <string name="action_autofill">使用 pasejo 自动填充</string>
+    <string name="action_back">返回</string>
     <string name="action_continue">继续</string>
     <string name="action_copy_code">复制验证码</string>
     <string name="action_copy_password">复制密码</string>
@@ -21,6 +22,7 @@
     <string name="setup_org">组织标识符</string>
     <string name="setup_genesis">组织指纹</string>
     <string name="setup_checkpoint">检查点密钥（可选）</string>
+    <string name="setup_managed">由你的组织设定</string>
     <string name="setup_creating">正在创建设备密钥并连接服务器…</string>
     <string name="tier_hardware">此手机将设备密钥保存在其安全硬件中。</string>
     <string name="tier_sealed">此手机无法在其安全硬件中保存这些类型的密钥，因此设备密钥由保存在安全硬件中的密钥封存。</string>
@@ -46,6 +48,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">已复制。剪贴板将在 %1$d 秒后清除。</string>
     <string name="entry_code">%1$s（%2$d 秒）</string>
+    <string name="entry_secret">机密</string>
+    <string name="entry_otp">一次性验证码</string>
 
     <string name="reset_title">移除此设备？</string>
     <string name="reset_message">此手机上的设备密钥和登录信息将被删除。重新登录会创建一个需要管理员批准的新设备。</string>

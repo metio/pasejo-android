@@ -5,6 +5,7 @@
     <string name="app_name" translatable="false">pasejo</string>
 
     <string name="action_autofill">Use pasejo for autofill</string>
+    <string name="action_back">Back</string>
     <string name="action_continue">Continue</string>
     <string name="action_copy_code">Copy code</string>
     <string name="action_copy_password">Copy password</string>
@@ -23,6 +24,7 @@
     <string name="setup_org">Organization identifier</string>
     <string name="setup_genesis">Organization fingerprint</string>
     <string name="setup_checkpoint">Checkpoint key (optional)</string>
+    <string name="setup_managed">Set by your organization</string>
     <string name="setup_creating">Creating the device keys and contacting the server…</string>
     <string name="tier_hardware">This phone keeps the device keys inside its secure hardware.</string>
     <string name="tier_sealed">This phone cannot keep these key types in its secure hardware, so the device keys are sealed by keys that it keeps there.</string>
@@ -48,6 +50,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">Copied. The clipboard is cleared in %1$d seconds.</string>
     <string name="entry_code">%1$s (%2$d s)</string>
+    <string name="entry_secret">Secret</string>
+    <string name="entry_otp">One-time code</string>
 
     <string name="reset_title">Remove this device?</string>
     <string name="reset_message">The device keys and the sign-in on this phone are deleted. Signing in again creates a new device that an admin has to approve.</string>
