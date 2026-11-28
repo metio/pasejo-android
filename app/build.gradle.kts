@@ -25,8 +25,8 @@ android {
         applicationId = "wtf.metio.pasejo"
         minSdk = minSdkLevel
         targetSdk = 36
-        versionCode = 1
-        versionName = "dev"
+        versionCode = 28648948
+        versionName = "2026.11.28140228"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += abis.keys }
     }
