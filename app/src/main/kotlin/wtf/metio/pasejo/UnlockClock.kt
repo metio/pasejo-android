@@ -15,6 +15,11 @@ class UnlockClock(private val now: () -> Long = System::currentTimeMillis) {
         until = 0L
     }
 
+    /** Ends a running period after `seconds` at the latest; a shorter one stays. */
+    fun shorten(seconds: Int) {
+        until = minOf(until, now() + seconds * 1000L)
+    }
+
     /** Whether the unlock period still runs. */
     fun open(): Boolean = now() < until
 

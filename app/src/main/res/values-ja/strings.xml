@@ -35,6 +35,7 @@
     <string name="locked_title">ロック中</string>
     <string name="locked_checking">このデバイスの承認を確認しています…</string>
     <string name="locked_fingerprint">デバイスのフィンガープリント (管理者が承認前に照合します):</string>
+    <string name="locked_approve">承認者はこのコマンドを実行してデバイスを承認します:</string>
     <string name="locked_active">このデバイスは %1$s で承認されています。</string>
     <string name="locked_pending">このデバイスは %1$s で承認待ちです。</string>
     <string name="locked_inactive">このデバイスは %1$s のメンバーではありません。</string>

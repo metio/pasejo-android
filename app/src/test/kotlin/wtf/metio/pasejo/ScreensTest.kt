@@ -31,6 +31,16 @@ class ScreensTest {
     fun aFilterWithoutMatchesListsNothing() = assertEquals(emptyList<String>(), entryNames(store, "nothing"))
 
     @Test
+    fun theApproveCommandQuotesTheFingerprintAndNamesTheOrganization() = assertEquals(
+        "pasejo org approve 0f0f --fingerprint '0123abcd 4567ef01' --org a1b2",
+        approveCommand("0f0f", "0123abcd 4567ef01", "a1b2"),
+    )
+
+    @Test
+    fun withoutAnOrganizationTheApproverUsesTheirOnlyOne() =
+        assertEquals("pasejo org approve 0f0f --fingerprint '0123abcd'", approveCommand("0f0f", "0123abcd", null))
+
+    @Test
     fun aMatchNamesItsUserAndStore() = assertEquals("alice · Team", matchDetail(match("alice", "Team")))
 
     @Test

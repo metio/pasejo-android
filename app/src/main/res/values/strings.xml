@@ -37,6 +37,7 @@
     <string name="locked_title">Locked</string>
     <string name="locked_checking">Checking this device\'s approval…</string>
     <string name="locked_fingerprint">Device fingerprint, which an admin compares before approving:</string>
+    <string name="locked_approve">An approver runs this command to approve the device:</string>
     <string name="locked_active">This device is approved in %1$s.</string>
     <string name="locked_pending">This device waits for approval in %1$s.</string>
     <string name="locked_inactive">This device is not a member of %1$s.</string>

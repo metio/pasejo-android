@@ -30,6 +30,26 @@ class UnlockClockTest {
     }
 
     @Test
+    fun aLowerCapShortensARunningPeriod() {
+        clock.unlock(300)
+        clock.shorten(60)
+        assertEquals(60_000, clock.remainingMillis())
+    }
+
+    @Test
+    fun aHigherCapKeepsAShorterPeriod() {
+        clock.unlock(30)
+        clock.shorten(60)
+        assertEquals(30_000, clock.remainingMillis())
+    }
+
+    @Test
+    fun aCapOpensNoClosedPeriod() {
+        clock.shorten(60)
+        assertFalse(clock.open())
+    }
+
+    @Test
     fun lockingEndsThePeriodAtOnce() {
         clock.unlock(300)
         clock.lock()
