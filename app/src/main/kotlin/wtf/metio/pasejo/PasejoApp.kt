@@ -85,8 +85,19 @@ class PasejoApp : Application() {
             IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED),
             Context.RECEIVER_NOT_EXPORTED,
         )
+        restore()
+    }
+
+    /**
+     * Restores the saved device. A failure is kept for the screens, and
+     * another call tries again: the key store can refuse for a while, such
+     * as while the phone is locked, and the only other way on deletes the
+     * keys.
+     */
+    fun restore() {
         try {
             device = states.load()?.let { Device.restore(it, keys.signer(), TrustAnchors.system()) }
+            restoreError = null
         } catch (error: Exception) {
             restoreError = error.message ?: error.javaClass.simpleName
         }

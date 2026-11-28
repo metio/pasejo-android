@@ -43,6 +43,9 @@ data class MainUi(
 /** What the main screen needs from the app and the platform. */
 interface MainEnvironment : Platform {
     val restoreError: String?
+
+    /** Tries the saved device again, setting or clearing [restoreError]. */
+    fun restore()
     val managed: ManagedConfig
     val keyTier: Tier?
     val supportedTier: Tier
@@ -133,6 +136,8 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
     }
 
     fun reset() = work({ env.reset() }) { render() }
+
+    fun retryRestore() = work({ env.restore() }) { render() }
 
     fun create(values: SetupValues) {
         env.setup = values

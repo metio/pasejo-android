@@ -44,8 +44,12 @@
             </intent-filter>
         </activity>
 
+        <!-- A fill runs one query and at most one unlock prompt; recreating
+             the activity on a rotation would start both again. Compose lays
+             the screen out anew without it. -->
         <activity
             android:name=".FillActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
             android:excludeFromRecents="true"
             android:exported="false"
             android:taskAffinity="" />
