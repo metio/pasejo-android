@@ -70,9 +70,11 @@ fun Page(
     scroll: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // The bar collapses only once a top bar has measured its height; without
+    // one, its scroll behaviour would take every scroll for itself.
     val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
-        modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
+        modifier = if (title != null) Modifier.nestedScroll(bar.nestedScrollConnection) else Modifier,
         topBar = {
             if (title != null) {
                 TopAppBar(

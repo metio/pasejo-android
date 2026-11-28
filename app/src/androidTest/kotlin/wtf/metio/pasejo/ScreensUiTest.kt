@@ -11,7 +11,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
@@ -57,6 +61,22 @@ class ScreensUiTest {
         compose.onNodeWithTag("setup-genesis").performTextInput("abcd")
         proceed.assertIsEnabled().performScrollTo().performClick()
         assertEquals(SetupValues("https://pasejo.example.com", "0123", "abcd", ""), entered)
+    }
+
+    @Test
+    fun aShortScreenScrollsTheSetupToItsButton() {
+        compose.setContent {
+            PasejoTheme {
+                Box(Modifier.size(width = 320.dp, height = 360.dp)) {
+                    SetupScreen(SetupField(""), SetupField(""), SetupField(""), SetupField(""), Tier.HARDWARE) {}
+                }
+            }
+        }
+        // Typing focuses a field below the fold, which the column scrolls into view.
+        compose.onNodeWithTag("setup-genesis").performTextInput("abcd")
+        // The keyboard's padding applies to the window's bottom, below this short box.
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.onNodeWithText(text(R.string.action_continue)).performScrollTo().assertIsDisplayed()
     }
 
     @Test
