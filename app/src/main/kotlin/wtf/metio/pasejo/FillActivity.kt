@@ -136,6 +136,7 @@ class FillActivity : ComponentActivity() {
 
     private fun fill(form: Form, request: FillRequest, match: FillMatch) {
         val device = app.device ?: return finish()
+        if (!app.unlocked()) return message(getString(R.string.error_locked))
         app.background({ device.fill(request, match.store, match.name).also { app.save() } }) { result ->
             result.onFailure { message(describe(it)) }
             result.onSuccess { credential ->

@@ -12,6 +12,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -28,7 +29,7 @@ sealed interface Route {
     data class RestoreFailed(val reason: String) : Route
     data class Setup(val server: SetupField, val org: SetupField, val genesis: SetupField, val checkpoint: SetupField, val tier: Tier) : Route
     data class SignIn(val server: String) : Route
-    data class Locked(val fingerprint: String) : Route
+    data class Locked(val fingerprint: String, val command: String, val tier: Tier?) : Route
     data class Stores(val stores: List<StoreView>, val offline: Boolean, val offerAutofill: Boolean) : Route
     data class Entries(val store: StoreView) : Route
     data class Entry(val store: StoreView, val name: String, val allowCopy: Boolean) : Route
@@ -72,11 +73,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        app.onPolicyChange = ::render
         render()
     }
 
     override fun onPause() {
         super.onPause()
+        app.onPolicyChange = null
         hideValues()
     }
 
@@ -92,7 +95,9 @@ class MainActivity : ComponentActivity() {
             ) { confirmingReset = true }
             is Route.Setup -> SetupScreen(current.server, current.org, current.genesis, current.checkpoint, current.tier, ::create)
             is Route.SignIn -> SignInScreen(current.server, ::signIn) { confirmingReset = true }
-            is Route.Locked -> LockedScreen(current.fingerprint, lockStatus, ::unlock) { confirmingReset = true }
+            is Route.Locked -> LockedScreen(current.fingerprint, current.command, current.tier, lockStatus, ::unlock) {
+                confirmingReset = true
+            }
             is Route.Stores -> StoresScreen(
                 current.stores,
                 current.offline,
@@ -212,7 +217,9 @@ class MainActivity : ComponentActivity() {
     private fun signIn() {
         val device = app.device ?: return
         val url = device.startSignIn(REDIRECT)
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
+        // A Custom Tab, or the browser where none supports it; the server
+        // redirects to REDIRECT, which the browser hands back to this activity.
+        CustomTabsIntent.Builder().build().launchUrl(this, Uri.parse(url))
     }
 
     private fun handleRedirect(intent: Intent?) {
@@ -247,7 +254,8 @@ class MainActivity : ComponentActivity() {
 
     private fun locked() {
         val device = app.device ?: return
-        route = Route.Locked(device.fingerprint())
+        val fingerprint = device.fingerprint()
+        route = Route.Locked(fingerprint, approveCommand(device.deviceId(), fingerprint, device.organization()), app.keys.tier)
         lockStatus = null
         work({ device.enrollment() to device.refresh() }) { result ->
             result.onFailure { lockStatus = LockStatus(describe(it), canUnlock = false, Tone.ERROR) }
@@ -276,8 +284,22 @@ class MainActivity : ComponentActivity() {
         Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).setData(Uri.parse("package:$packageName")),
     )
 
+    /**
+     * The device for a read: `null` while another request runs, and `null`
+     * after rendering the locked screen when the stores closed.
+     */
+    private fun open(): wtf.metio.pasejo.core.Device? {
+        if (working) return null
+        val device = app.device
+        if (device == null || !app.unlocked()) {
+            render()
+            return null
+        }
+        return device
+    }
+
     private fun reveal(store: StoreView, name: String) {
-        val device = app.device ?: return
+        val device = open() ?: return
         work({ device.reveal(store.id, name).also { app.save() } }) { result ->
             result.onFailure { value = Shown.Message(describe(it)) }
             result.onSuccess { value = Shown.Value(it) }
@@ -285,7 +307,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun copyPassword(store: StoreView, name: String) {
-        val device = app.device ?: return
+        val device = open() ?: return
         work({ device.reveal(store.id, name).also { app.save() }.lineSequence().first() }) { result ->
             result.onFailure { value = Shown.Message(describe(it)) }
             result.onSuccess {
@@ -296,7 +318,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showCode(store: StoreView, name: String) {
-        val device = app.device ?: return
+        val device = open() ?: return
         work({ device.totp(store.id, name).also { app.save() } }) { result ->
             result.onFailure {
                 liveCode = null
@@ -312,11 +334,11 @@ class MainActivity : ComponentActivity() {
     /** Fetches the next code once the shown one expires, while the stores stay open. */
     private fun nextCode() {
         val current = route as? Route.Entry ?: return
-        if (app.unlocked()) showCode(current.store, current.name) else render()
+        showCode(current.store, current.name)
     }
 
     private fun copyCode(store: StoreView, name: String) {
-        val device = app.device ?: return
+        val device = open() ?: return
         work({ device.totp(store.id, name).also { app.save() } }) { result ->
             liveCode = null
             result.onFailure { code = Shown.Message(describe(it)) }

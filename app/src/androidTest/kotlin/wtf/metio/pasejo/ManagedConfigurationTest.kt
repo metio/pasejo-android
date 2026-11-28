@@ -146,6 +146,19 @@ class ManagedConfigurationTest {
     }
 
     @Test
+    fun aLowerCapShortensARunningUnlockPeriod() {
+        val main = android.os.Handler(android.os.Looper.getMainLooper())
+        main.post { app.clock.unlock(300) }
+        instrumentation.waitForIdleSync()
+        restrict(Bundle().apply { putInt("max_unlock_seconds", 30) })
+        val deadline = System.currentTimeMillis() + 5_000
+        while (app.clock.remainingMillis() > 30_000 && System.currentTimeMillis() < deadline) Thread.sleep(100)
+        assertTrue(app.clock.remainingMillis() in 1..30_000)
+        main.post { app.lock() }
+        instrumentation.waitForIdleSync()
+    }
+
+    @Test
     fun theSetupScreenLocksManagedFields() {
         restrict(Bundle().apply { putString("server_url", "https://pasejo.example.com") })
         ActivityScenario.launch(MainActivity::class.java).use {

@@ -35,6 +35,7 @@
     <string name="locked_title">Bloqueado</string>
     <string name="locked_checking">Comprobando la aprobación de este dispositivo…</string>
     <string name="locked_fingerprint">Huella del dispositivo, que un administrador compara antes de aprobarlo:</string>
+    <string name="locked_approve">Quien aprueba dispositivos ejecuta este comando para aprobarlo:</string>
     <string name="locked_active">Este dispositivo está aprobado en %1$s.</string>
     <string name="locked_pending">Este dispositivo espera aprobación en %1$s.</string>
     <string name="locked_inactive">Este dispositivo no es miembro de %1$s.</string>

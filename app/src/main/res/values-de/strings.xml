@@ -35,6 +35,7 @@
     <string name="locked_title">Gesperrt</string>
     <string name="locked_checking">Die Freigabe dieses Geräts wird geprüft…</string>
     <string name="locked_fingerprint">Fingerabdruck des Geräts, den eine Administratorin oder ein Administrator vor der Freigabe vergleicht:</string>
+    <string name="locked_approve">Eine Person, die Geräte freigibt, führt diesen Befehl aus:</string>
     <string name="locked_active">Dieses Gerät ist in %1$s freigegeben.</string>
     <string name="locked_pending">Dieses Gerät wartet in %1$s auf Freigabe.</string>
     <string name="locked_inactive">Dieses Gerät ist kein Mitglied von %1$s.</string>

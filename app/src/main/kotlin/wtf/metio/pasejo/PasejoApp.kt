@@ -35,6 +35,9 @@ class PasejoApp : Application() {
     private val main = Handler(Looper.getMainLooper())
     private val expire = Runnable { lock() }
 
+    /** Called on the main thread when the managed configuration changed. */
+    var onPolicyChange: (() -> Unit)? = null
+
     @Volatile
     var device: Device? = null
         private set
@@ -59,6 +62,15 @@ class PasejoApp : Application() {
                 override fun onReceive(context: Context, intent: Intent) = lock()
             },
             IntentFilter(Intent.ACTION_SCREEN_OFF),
+        )
+        // Only a running app receives restriction changes; one that starts
+        // later reads the current restrictions anyway.
+        registerReceiver(
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) = policyChanged()
+            },
+            IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED),
+            Context.RECEIVER_NOT_EXPORTED,
         )
         try {
             device = states.load()?.let { Device.restore(it, keys.signer(), TrustAnchors.system()) }
@@ -90,11 +102,24 @@ class PasejoApp : Application() {
         device?.let { states.save(it.state()) }
     }
 
-    /** Whether store keys are open; drops them once the period ended. */
+    /**
+     * Whether store keys are open; drops them once the period or the
+     * session ended, since an unlock period never outlasts the session.
+     */
     fun unlocked(): Boolean {
         val current = device ?: return false
-        if (!clock.open()) current.lock()
+        if (!clock.open() || !current.signedIn()) current.lock()
         return current.unlocked()
+    }
+
+    /** Applies a new managed configuration to a running unlock period. */
+    fun policyChanged() {
+        if (clock.open()) {
+            clock.shorten(managed.unlockSeconds())
+            main.removeCallbacks(expire)
+            main.postDelayed(expire, clock.remainingMillis())
+        }
+        onPolicyChange?.invoke()
     }
 
     fun opened(seconds: Int) {

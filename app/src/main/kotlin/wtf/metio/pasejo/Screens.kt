@@ -70,6 +70,15 @@ sealed interface Shown {
     data class Message(val text: String) : Shown
 }
 
+/**
+ * The command an approver runs to approve this device; the fingerprint is
+ * quoted, since it holds spaces.
+ */
+fun approveCommand(device: String, fingerprint: String, org: String?): String = buildString {
+    append("pasejo org approve ").append(device).append(" --fingerprint '").append(fingerprint).append('\'')
+    if (org != null) append(" --org ").append(org)
+}
+
 /** The names of a store an entry list shows for [query]: each name once, sorted. */
 fun entryNames(store: StoreView, query: String): List<String> =
     (store.secrets + store.otp).distinct().sorted().filter { it.contains(query.trim(), ignoreCase = true) }
@@ -135,7 +144,14 @@ fun SignInScreen(server: String, onSignIn: () -> Unit, onReset: () -> Unit) = Pa
 }
 
 @Composable
-fun LockedScreen(fingerprint: String, status: LockStatus?, onUnlock: () -> Unit, onReset: () -> Unit) = Page(title = null) {
+fun LockedScreen(
+    fingerprint: String,
+    command: String,
+    tier: Tier?,
+    status: LockStatus?,
+    onUnlock: () -> Unit,
+    onReset: () -> Unit,
+) = Page(title = null) {
     Hero(stringResource(R.string.locked_title))
     if (status == null) {
         LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -147,7 +163,17 @@ fun LockedScreen(fingerprint: String, status: LockStatus?, onUnlock: () -> Unit,
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.locked_fingerprint), style = MaterialTheme.typography.bodyMedium)
             Grouped(fingerprint, Modifier.testTag("fingerprint"))
+            Text(stringResource(R.string.locked_approve), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                command,
+                modifier = Modifier.testTag("approve"),
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+            )
         }
+    }
+    if (tier != null) {
+        Notice(stringResource(if (tier == Tier.HARDWARE) R.string.tier_hardware else R.string.tier_sealed), icon = Icons.Filled.Lock)
     }
     Button(
         onClick = onUnlock,

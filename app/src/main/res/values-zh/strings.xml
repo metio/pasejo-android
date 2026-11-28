@@ -35,6 +35,7 @@
     <string name="locked_title">已锁定</string>
     <string name="locked_checking">正在检查此设备的批准状态…</string>
     <string name="locked_fingerprint">设备指纹，管理员在批准前会进行比对：</string>
+    <string name="locked_approve">审批人运行此命令来批准该设备：</string>
     <string name="locked_active">此设备已在 %1$s 中获得批准。</string>
     <string name="locked_pending">此设备正在等待 %1$s 的批准。</string>
     <string name="locked_inactive">此设备不是 %1$s 的成员。</string>

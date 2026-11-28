@@ -96,11 +96,14 @@ class ScreensUiTest {
     fun onlyAnActiveDeviceCanUnlock() {
         var status: LockStatus? by mutableStateOf(null)
         val fingerprint = "0123abcd 4567ef01 89abcdef 01234567 89abcdef"
-        compose.setContent { PasejoTheme { LockedScreen(fingerprint, status, onUnlock = {}, onReset = {}) } }
+        val command = approveCommand("0f0f", fingerprint, "a1b2")
+        compose.setContent { PasejoTheme { LockedScreen(fingerprint, command, Tier.SEALED, status, onUnlock = {}, onReset = {}) } }
         val unlock = compose.onNodeWithText(text(R.string.action_unlock))
         unlock.assertIsNotEnabled()
         compose.onNodeWithText(text(R.string.locked_checking)).assertExists()
         compose.onNodeWithTag("fingerprint").assertTextEquals(fingerprint)
+        compose.onNodeWithTag("approve").assertTextEquals(command)
+        compose.onNodeWithText(text(R.string.tier_sealed)).assertExists()
         status = LockStatus(text(R.string.locked_pending, "metio"), canUnlock = false)
         compose.onNodeWithText(text(R.string.locked_pending, "metio")).assertExists()
         unlock.assertIsNotEnabled()

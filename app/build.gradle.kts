@@ -163,6 +163,7 @@ dependencies {
     // Compose 1.12 (BOM 2026.08.00 and later) needs compileSdk 37.
     implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.browser:browser:1.10.0")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     testImplementation("junit:junit:4.13.2")
