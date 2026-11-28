@@ -25,7 +25,7 @@ concurrency:
 
 env:
   # The pasejo revision whose pasejo-mobile the release builds.
-  PASEJO_REF: 38ce8a61fdd9dd9f13ecfe83bb6baebcb26e4677
+  PASEJO_REF: c0ad2df0e045454062659410cc1b5e50749fc03d
   NDK_VERSION: 30.0.16248370
   BUILD_TOOLS: 36.0.0
   SIGNER_SHA256: ff117c4cada7bdb1c000989519c95e3e2d0f0611520302495615346052d8a3ed
