@@ -106,10 +106,7 @@ fun SetupScreen(
     SetupInput("setup-org", R.string.setup_org, orgValue, org.managed) { orgValue = it }
     SetupInput("setup-genesis", R.string.setup_genesis, genesisValue, genesis.managed) { genesisValue = it }
     SetupInput("setup-checkpoint", R.string.setup_checkpoint, checkpointValue, checkpoint.managed) { checkpointValue = it }
-    Notice(
-        stringResource(if (tier == Tier.HARDWARE) R.string.tier_hardware else R.string.tier_sealed),
-        icon = Icons.Filled.Lock,
-    )
+    TierNotice(tier)
     Button(
         onClick = { onContinue(SetupValues(serverValue.trim(), orgValue.trim(), genesisValue.trim(), checkpointValue.trim())) },
         enabled = listOf(serverValue, orgValue, genesisValue).all { it.isNotBlank() },
@@ -173,9 +170,7 @@ fun LockedScreen(
             )
         }
     }
-    if (tier != null) {
-        Notice(stringResource(if (tier == Tier.HARDWARE) R.string.tier_hardware else R.string.tier_sealed), icon = Icons.Filled.Lock)
-    }
+    if (tier != null) TierNotice(tier)
     Button(
         onClick = onUnlock,
         enabled = status?.canUnlock == true,
@@ -186,6 +181,11 @@ fun LockedScreen(
     }
     ResetButton(onReset)
 }
+
+/** Where this phone keeps, or will keep, the device keys. */
+@Composable
+private fun TierNotice(tier: Tier) =
+    Notice(stringResource(if (tier == Tier.HARDWARE) R.string.tier_hardware else R.string.tier_sealed), icon = Icons.Filled.Lock)
 
 @Composable
 private fun ResetButton(onReset: () -> Unit) = TextButton(

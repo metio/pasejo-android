@@ -16,12 +16,14 @@ import javax.crypto.spec.GCMParameterSpec
  * The device state, encrypted under an AES-GCM key of Android's key store.
  * The state holds no private key, but it carries the session and the pins
  * that detect a rolled-back server, so it must not be readable or
- * replaceable by anyone but the app.
+ * replaceable by anyone but the app. The main thread and the worker both
+ * save it, and two saves share the temporary file and may both create the
+ * key, so every access holds one lock.
  */
 class StateStore(private val file: File, private val alias: String = "pasejo.state") {
     private val store: KeyStore = KeyStore.getInstance(DeviceKeys.ANDROID_KEY_STORE).apply { load(null) }
 
-    fun save(state: String) {
+    fun save(state: String) = synchronized(LOCK) {
         val plain = state.toByteArray()
         try {
             val cipher = Cipher.getInstance(GCM).apply {
@@ -38,7 +40,7 @@ class StateStore(private val file: File, private val alias: String = "pasejo.sta
     }
 
     /** The saved state, or `null` when there is none. */
-    fun load(): String? {
+    fun load(): String? = synchronized(LOCK) {
         if (!file.exists()) return null
         val sealed = file.readBytes()
         require(sealed.size > IV_BYTES) { "the device state is truncated" }
@@ -55,7 +57,7 @@ class StateStore(private val file: File, private val alias: String = "pasejo.sta
         }
     }
 
-    fun delete() {
+    fun delete() = synchronized(LOCK) {
         file.delete()
         if (store.containsAlias(alias)) store.deleteEntry(alias)
     }
@@ -75,6 +77,7 @@ class StateStore(private val file: File, private val alias: String = "pasejo.sta
     private companion object {
         const val GCM = "AES/GCM/NoPadding"
         const val IV_BYTES = 12
+        val LOCK = Any()
         val AAD = "pasejo device state v1".toByteArray()
     }
 }

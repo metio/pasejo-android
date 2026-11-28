@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -202,7 +200,3 @@ fun Monogram(name: String) = Surface(
         Text(name.firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "•", style = MaterialTheme.typography.titleMedium)
     }
 }
-
-/** Vertical room between groups inside a [Page]. */
-@Composable
-fun Gap(height: Dp = 8.dp) = Spacer(Modifier.height(height))

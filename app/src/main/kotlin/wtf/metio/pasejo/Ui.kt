@@ -39,10 +39,33 @@ fun Activity.describe(error: Throwable): String = when (error) {
     else -> error.message ?: error.javaClass.simpleName
 }
 
-/** Copies `value` as sensitive and clears it after `seconds` unless replaced. */
+/**
+ * Runs the clear of the latest copy after its delay. A newer copy cancels
+ * the older one's clear, so each copy stays for the whole delay.
+ */
+class ClearSchedule(private val post: (Runnable, Long) -> Unit, private val cancel: (Runnable) -> Unit) {
+    private var pending: Runnable? = null
+
+    fun copied(delayMillis: Long, clear: () -> Unit) {
+        pending?.let(cancel)
+        val next = Runnable {
+            pending = null
+            clear()
+        }
+        pending = next
+        post(next, delayMillis)
+    }
+}
+
+/**
+ * Copies `value` as sensitive and clears it after [CLEAR_SECONDS], unless
+ * another app's copy replaced it. In the background the app cannot read the
+ * clipboard, so it clears whatever is there.
+ */
 object Clipboard {
     const val CLEAR_SECONDS = 45
     private val main = Handler(Looper.getMainLooper())
+    private val schedule = ClearSchedule(main::postDelayed, main::removeCallbacks)
 
     fun copy(activity: Activity, label: String, value: String) {
         val manager = activity.getSystemService(ClipboardManager::class.java)
@@ -50,11 +73,11 @@ object Clipboard {
             description.extras = PersistableBundle().apply { putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) }
         }
         manager.setPrimaryClip(clip)
-        main.postDelayed({
+        schedule.copied(CLEAR_SECONDS * 1000L) {
             runCatching {
                 val current = manager.primaryClip
                 if (current == null || current.description.label == label) manager.clearPrimaryClip()
             }
-        }, CLEAR_SECONDS * 1000L)
+        }
     }
 }
