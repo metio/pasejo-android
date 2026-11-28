@@ -41,6 +41,9 @@
     <string name="locked_inactive">Cet appareil n’est pas membre de %1$s.</string>
     <string name="unlock_title">Déverrouiller pasejo</string>
     <string name="unlock_subtitle">Ouvrir les coffres sur cet appareil</string>
+    <string name="unlock_period">Rester déverrouillé pendant</string>
+    <string name="unlock_minutes">%1$d min</string>
+    <string name="unlock_seconds">%1$d s</string>
 
     <string name="stores_title">Coffres</string>
     <string name="offline_notice">Le serveur est injoignable. Seules les valeurs que ce téléphone a lues auparavant sont disponibles, et chaque lecture est signalée dès que le serveur est de nouveau joignable.</string>

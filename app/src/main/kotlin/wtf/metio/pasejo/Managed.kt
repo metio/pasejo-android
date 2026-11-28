@@ -22,7 +22,12 @@ data class ManagedConfig(
         return maxUnlockSeconds?.let { minOf(wanted, it.coerceAtLeast(MIN_UNLOCK_SECONDS)) } ?: wanted
     }
 
+    /** The unlock periods a person may choose: the usual ones up to the cap, or the cap alone below them. */
+    fun unlockChoices(): List<Int> =
+        CHOICES.filter { it <= unlockSeconds(MAX_UNLOCK_SECONDS) }.ifEmpty { listOf(unlockSeconds(MAX_UNLOCK_SECONDS)) }
+
     companion object {
+        private val CHOICES = listOf(60, 300, 900, 3600)
         const val DEFAULT_UNLOCK_SECONDS = 300
         const val MIN_UNLOCK_SECONDS = 10
         const val MAX_UNLOCK_SECONDS = 3600

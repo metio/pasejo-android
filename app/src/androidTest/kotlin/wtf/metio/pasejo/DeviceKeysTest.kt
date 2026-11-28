@@ -102,6 +102,43 @@ class DeviceKeysTest {
         assertArrayEquals(outside, inside)
     }
 
+    /** Whether this phone's StrongBox makes an RSA-3072 decryption key. */
+    private fun strongBoxTakesRsa3072(): Boolean {
+        val alias = "pasejo.test.strongbox"
+        val generator = java.security.KeyPairGenerator.getInstance("RSA", "AndroidKeyStore")
+        return try {
+            generator.initialize(
+                android.security.keystore.KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_DECRYPT)
+                    .setKeySize(3072)
+                    .setDigests(KeyProperties.DIGEST_SHA256)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
+                    .setIsStrongBoxBacked(true)
+                    .build(),
+            )
+            generator.generateKeyPair()
+            true
+        } catch (_: Exception) {
+            false
+        } finally {
+            java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.deleteEntry(alias)
+        }
+    }
+
+    @Test
+    fun sealingKeysLiveInStrongBoxWhereItTakesThem() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        org.junit.Assume.assumeTrue(
+            "the phone has no StrongBox",
+            context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_STRONGBOX_KEYSTORE),
+        )
+        val rsa = strongBoxTakesRsa3072()
+        keys.create(Tier.SEALED)
+        val levels = keys.securityLevels()
+        assertEquals(KeyProperties.SECURITY_LEVEL_STRONGBOX, levels[DeviceKeys.SEAL_SIGNING])
+        val expected = if (rsa) KeyProperties.SECURITY_LEVEL_STRONGBOX else KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT
+        assertEquals("StrongBox takes RSA-3072: $rsa", expected, levels[DeviceKeys.SEAL_AGREEMENT])
+    }
+
     @Test
     fun sealedKeysSurviveANewInstance() {
         keys.create(Tier.SEALED)

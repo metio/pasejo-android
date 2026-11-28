@@ -192,7 +192,7 @@ class DeviceKeys(
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_OAEP)
                 .authenticated(0),
-            strongBox = false,
+            strongBox = true,
         )
         val secret = generateSecret()
         try {
@@ -227,11 +227,19 @@ class DeviceKeys(
     private fun generatePair(algorithm: String, spec: KeyGenParameterSpec.Builder, strongBox: Boolean = false) {
         val generator = KeyPairGenerator.getInstance(algorithm, ANDROID_KEY_STORE)
         if (strongBox) {
+            // StrongBox needs to support only RSA-2048, so a phone with
+            // StrongBox may still refuse this key; the trusted execution
+            // environment takes it then, and the security-level check
+            // that follows still refuses software keys.
             try {
                 generator.initialize(spec.setIsStrongBoxBacked(true).build())
                 generator.generateKeyPair()
                 return
             } catch (_: StrongBoxUnavailableException) {
+                spec.setIsStrongBoxBacked(false)
+            } catch (_: java.security.ProviderException) {
+                spec.setIsStrongBoxBacked(false)
+            } catch (_: GeneralSecurityException) {
                 spec.setIsStrongBoxBacked(false)
             }
         }

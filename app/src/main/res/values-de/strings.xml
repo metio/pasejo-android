@@ -41,6 +41,9 @@
     <string name="locked_inactive">Dieses Gerät ist kein Mitglied von %1$s.</string>
     <string name="unlock_title">pasejo entsperren</string>
     <string name="unlock_subtitle">Die Speicher auf diesem Gerät öffnen</string>
+    <string name="unlock_period">Entsperrt bleiben für</string>
+    <string name="unlock_minutes">%1$d Min.</string>
+    <string name="unlock_seconds">%1$d s</string>
 
     <string name="stores_title">Speicher</string>
     <string name="offline_notice">Der Server ist nicht erreichbar. Nur Werte, die dieses Telefon zuvor gelesen hat, sind verfügbar, und jeder Lesezugriff wird gemeldet, sobald der Server wieder erreichbar ist.</string>

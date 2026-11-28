@@ -112,10 +112,30 @@ class PasejoApp : Application() {
         return current.unlocked()
     }
 
+    /** The unlock period the person chose, before the policy caps it. */
+    var chosenUnlockSeconds: Int
+        get() = getSharedPreferences("unlock", MODE_PRIVATE).getInt("seconds", ManagedConfig.DEFAULT_UNLOCK_SECONDS)
+        set(seconds) {
+            getSharedPreferences("unlock", MODE_PRIVATE).edit().putInt("seconds", seconds).apply()
+            shortenTo(managed.unlockSeconds(seconds))
+        }
+
+    /** The unlock period that applies: the person's choice, capped by the policy. */
+    fun unlockSeconds(): Int = managed.unlockSeconds(chosenUnlockSeconds)
+
+    /** Ends a running unlock period after `seconds` at the latest. */
+    private fun shortenTo(seconds: Int) {
+        if (clock.open()) {
+            clock.shorten(seconds)
+            main.removeCallbacks(expire)
+            main.postDelayed(expire, clock.remainingMillis())
+        }
+    }
+
     /** Applies a new managed configuration to a running unlock period. */
     fun policyChanged() {
         if (clock.open()) {
-            clock.shorten(managed.unlockSeconds())
+            clock.shorten(unlockSeconds())
             main.removeCallbacks(expire)
             main.postDelayed(expire, clock.remainingMillis())
         }

@@ -30,7 +30,7 @@ object Unlocker {
                 { unsealer ->
                     app.background({ device.unlock(app.keys.agreement(unsealer)) }) { opened ->
                         if (opened.isSuccess) {
-                            app.opened(app.managed.unlockSeconds())
+                            app.opened(app.unlockSeconds())
                             app.save()
                         }
                         done(opened)
