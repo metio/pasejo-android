@@ -45,4 +45,12 @@ class ScreensTest {
 
     @Test
     fun aMatchWithoutUserNamesOnlyItsStore() = assertEquals("Team", matchDetail(match("", "Team")))
+
+    @Test
+    fun anOrganizationWithASpaceStaysOneArgument() =
+        assertEquals("pasejo org approve 0f0f --fingerprint '0123abcd' --org 'my team'", approveCommand("0f0f", "0123abcd", "my team"))
+
+    @Test
+    fun aQuoteInAnArgumentIsEscapedForTheShell() =
+        assertEquals("pasejo org approve 'dev'\\''ice' --fingerprint '01'\\''23' --org 'it'\\''s'", approveCommand("dev'ice", "01'23", "it's"))
 }

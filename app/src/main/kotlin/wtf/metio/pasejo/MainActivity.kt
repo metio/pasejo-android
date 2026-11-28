@@ -145,6 +145,7 @@ class MainActivity : ComponentActivity() {
     private inner class Environment : MainEnvironment {
         private val preferences get() = getSharedPreferences("setup", MODE_PRIVATE)
 
+        override val requests: InFlight get() = app.requests
         override val device: DeviceInterface? get() = app.device
         override val restoreError: String? get() = app.restoreError
         override val managed: ManagedConfig get() = app.managed

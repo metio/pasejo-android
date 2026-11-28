@@ -32,6 +32,7 @@ class PasejoApp : Application() {
     val clock = UnlockClock()
     val links = LinkCache(::verifyAppDomain)
     private val worker = Executors.newSingleThreadExecutor()
+    val requests = InFlight()
     private val main = Handler(Looper.getMainLooper())
     private val expire = Runnable { lock() }
 
@@ -171,11 +172,15 @@ class PasejoApp : Application() {
         states.delete()
     }
 
-    /** Runs `work` off the main thread and hands its result to `done` on it. */
+    /**
+     * Runs `work` off the main thread and hands its result to `done` on it;
+     * a redraw a screen asked for meanwhile follows once nothing runs.
+     */
     fun <T> background(work: () -> T, done: (Result<T>) -> Unit) {
+        requests.started()
         worker.execute {
             val result = runCatching(work)
-            main.post { done(result) }
+            main.post { requests.finished({ done(result) }) { onChange?.invoke() } }
         }
     }
 }
