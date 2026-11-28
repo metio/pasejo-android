@@ -51,6 +51,23 @@ class MainActivityTest {
     }
 
     @Test
+    fun anEndedUnlockPeriodTellsTheOpenScreen() {
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val app = instrumentation.targetContext.applicationContext as PasejoApp
+        val told = java.util.concurrent.CountDownLatch(1)
+        instrumentation.runOnMainSync {
+            app.onChange = { told.countDown() }
+            app.opened(1)
+        }
+        try {
+            assertTrue("the screen was not told", told.await(5, java.util.concurrent.TimeUnit.SECONDS))
+            assertTrue(!app.clock.open())
+        } finally {
+            instrumentation.runOnMainSync { app.onChange = null }
+        }
+    }
+
+    @Test
     fun theFillActivityCannotBeStartedByOtherApps() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
         val info = context.packageManager.getActivityInfo(

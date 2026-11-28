@@ -8,6 +8,7 @@ import android.hardware.biometrics.BiometricManager.Authenticators
 import android.hardware.biometrics.BiometricPrompt
 import android.os.CancellationSignal
 import javax.crypto.Cipher
+import wtf.metio.pasejo.core.KeyAgreement
 import wtf.metio.pasejo.core.StoreView
 
 /**
@@ -20,15 +21,10 @@ object Unlocker {
     fun unlock(activity: Activity, done: (Result<List<StoreView>>) -> Unit) {
         val app = activity.application as PasejoApp
         val device = app.device ?: return done(Result.failure(IllegalStateException("no device")))
-        val cipher = try {
-            app.keys.unsealCipher()
-        } catch (error: Exception) {
-            return done(Result.failure(error))
-        }
-        authenticate(activity, cipher) { authenticated ->
+        identity(activity) { authenticated ->
             authenticated.fold(
-                { unsealer ->
-                    app.background({ device.unlock(app.keys.agreement(unsealer)) }) { opened ->
+                { identity ->
+                    app.background({ device.unlock(identity()) }) { opened ->
                         if (opened.isSuccess) {
                             app.opened(app.unlockSeconds())
                             app.save()
@@ -38,6 +34,22 @@ object Unlocker {
                 },
                 { error -> done(Result.failure(error)) },
             )
+        }
+    }
+
+    /**
+     * Asks the person to authenticate and hands back the age identity, which
+     * is to be opened off the main thread.
+     */
+    fun identity(activity: Activity, done: (Result<() -> KeyAgreement>) -> Unit) {
+        val keys = (activity.application as PasejoApp).keys
+        val cipher = try {
+            keys.unsealCipher()
+        } catch (error: Exception) {
+            return done(Result.failure(error))
+        }
+        authenticate(activity, cipher) { authenticated ->
+            done(authenticated.map { unsealer -> { keys.agreement(unsealer) } })
         }
     }
 

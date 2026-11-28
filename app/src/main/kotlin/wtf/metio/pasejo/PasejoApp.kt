@@ -35,8 +35,11 @@ class PasejoApp : Application() {
     private val main = Handler(Looper.getMainLooper())
     private val expire = Runnable { lock() }
 
-    /** Called on the main thread when the managed configuration changed. */
-    var onPolicyChange: (() -> Unit)? = null
+    /**
+     * Called on the main thread when the stores locked or the managed
+     * configuration changed, so the open screen can draw itself again.
+     */
+    var onChange: (() -> Unit)? = null
 
     @Volatile
     var device: Device? = null
@@ -127,31 +130,35 @@ class PasejoApp : Application() {
     private fun shortenTo(seconds: Int) {
         if (clock.open()) {
             clock.shorten(seconds)
-            main.removeCallbacks(expire)
-            main.postDelayed(expire, clock.remainingMillis())
+            scheduleExpiry()
         }
     }
 
     /** Applies a new managed configuration to a running unlock period. */
     fun policyChanged() {
-        if (clock.open()) {
-            clock.shorten(unlockSeconds())
-            main.removeCallbacks(expire)
-            main.postDelayed(expire, clock.remainingMillis())
-        }
-        onPolicyChange?.invoke()
+        shortenTo(unlockSeconds())
+        changed()
     }
 
     fun opened(seconds: Int) {
         clock.unlock(seconds)
-        main.removeCallbacks(expire)
-        main.postDelayed(expire, clock.remainingMillis())
+        scheduleExpiry()
     }
 
     fun lock() {
         main.removeCallbacks(expire)
         clock.lock()
         device?.lock()
+        changed()
+    }
+
+    private fun scheduleExpiry() {
+        main.removeCallbacks(expire)
+        main.postDelayed(expire, clock.remainingMillis())
+    }
+
+    private fun changed() {
+        main.post { onChange?.invoke() }
     }
 
     /** Forgets the device: its keys, its state and its session. */

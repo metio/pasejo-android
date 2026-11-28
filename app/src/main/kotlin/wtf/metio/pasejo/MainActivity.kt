@@ -15,61 +15,31 @@ import androidx.activity.enableEdgeToEdge
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
-import wtf.metio.pasejo.core.StoreView
-import wtf.metio.pasejo.core.TotpCode
-
-/** What the activity shows; each screen gets everything it needs from here. */
-sealed interface Route {
-    data class Busy(val text: String) : Route
-    data class Failed(val message: String, val retry: () -> Unit) : Route
-    data class RestoreFailed(val reason: String) : Route
-    data class Setup(val server: SetupField, val org: SetupField, val genesis: SetupField, val checkpoint: SetupField, val tier: Tier) : Route
-    data class SignIn(val server: String) : Route
-    data class Locked(val fingerprint: String, val command: String, val tier: Tier?) : Route
-    data class Stores(
-        val stores: List<StoreView>,
-        val offline: Boolean,
-        val offerAutofill: Boolean,
-        val unlockChoices: List<Int>,
-        val unlockSeconds: Int,
-    ) : Route
-    data class Entries(val store: StoreView) : Route
-    data class Entry(val store: StoreView, val name: String, val allowCopy: Boolean) : Route
-}
+import wtf.metio.pasejo.core.DeviceInterface
+import wtf.metio.pasejo.core.KeyAgreement
 
 /**
  * The app's one activity: set-up, sign-in, enrollment, unlock, then the
- * stores, their entries and one entry at a time.
+ * stores, their entries and one entry at a time. [MainModel] decides what it
+ * shows; the activity supplies the platform.
  */
 class MainActivity : ComponentActivity() {
     private val app get() = application as PasejoApp
-    private var store: StoreView? = null
-    private var entry: String? = null
-
-    private var route by mutableStateOf<Route>(Route.Busy(""))
-    private var lockStatus by mutableStateOf<LockStatus?>(null)
-    private var value by mutableStateOf<Shown>(Shown.Hidden)
-    private var code by mutableStateOf<Shown>(Shown.Hidden)
-    private var liveCode by mutableStateOf<TotpCode?>(null)
-    private var codeGeneration by mutableIntStateOf(0)
+    private var ui by mutableStateOf(MainUi())
     private var confirmingReset by mutableStateOf(false)
-
-    // Device calls take the core's lock, which a running request holds, so
-    // the main thread reads the device only while no request runs. The
-    // screens read only the routes built here, never the device.
-    private var working = false
+    private lateinit var model: MainModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         secure()
+        model = MainModel(Environment()) { ui = it }
         setContent { PasejoTheme { Content() } }
         handleRedirect(intent)
-        render()
+        model.render()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -79,29 +49,30 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        app.onPolicyChange = ::render
-        render()
+        app.onChange = model::render
+        model.render()
     }
 
     override fun onPause() {
         super.onPause()
-        app.onPolicyChange = null
-        hideValues()
+        app.onChange = null
+        model.hide()
     }
 
     @Composable
     private fun Content() {
-        BackHandler(enabled = store != null && route.let { it is Route.Entries || it is Route.Entry }) { back() }
-        when (val current = route) {
+        val ui = ui
+        BackHandler(enabled = ui.navigable) { model.back() }
+        when (val current = ui.route) {
             is Route.Busy -> Busy(current.text)
-            is Route.Failed -> FailedScreen(current.message, stringResource(R.string.action_retry), current.retry)
+            is Route.Failed -> FailedScreen(current.message, stringResource(R.string.action_retry), model::render)
             is Route.RestoreFailed -> FailedScreen(
-                getString(R.string.restore_failed, current.reason),
+                stringResource(R.string.restore_failed, current.reason),
                 stringResource(R.string.action_reset),
             ) { confirmingReset = true }
-            is Route.Setup -> SetupScreen(current.server, current.org, current.genesis, current.checkpoint, current.tier, ::create)
+            is Route.Setup -> SetupScreen(current.server, current.org, current.genesis, current.checkpoint, current.tier, model::create)
             is Route.SignIn -> SignInScreen(current.server, ::signIn) { confirmingReset = true }
-            is Route.Locked -> LockedScreen(current.fingerprint, current.command, current.tier, lockStatus, ::unlock) {
+            is Route.Locked -> LockedScreen(current.fingerprint, current.command, current.tier, ui.lockStatus, model::unlock) {
                 confirmingReset = true
             }
             is Route.Stores -> StoresScreen(
@@ -110,26 +81,30 @@ class MainActivity : ComponentActivity() {
                 current.offerAutofill,
                 current.unlockChoices,
                 current.unlockSeconds,
-                onChooseUnlock = { app.chosenUnlockSeconds = it; render() },
-                onOpen = { store = it; render() },
+                onChooseUnlock = model::chooseUnlock,
+                onOpen = model::openStore,
                 onAutofill = ::offerAutofill,
-                onLock = { app.lock(); render() },
+                onLock = model::lock,
             )
-            is Route.Entries -> EntriesScreen(current.store, onOpen = { entry = it; render() }, onBack = ::back)
+            is Route.Entries -> EntriesScreen(current.store, onOpen = model::openEntry, onBack = model::back)
             is Route.Entry -> {
-                val live = liveCode
+                val live = ui.liveCode
                 EntryScreen(
                     name = current.name,
                     secret = current.name in current.store.secrets,
                     otp = current.name in current.store.otp,
                     allowCopy = current.allowCopy,
-                    value = value,
-                    code = if (live == null) code else Shown.Value(countdown(live.code, live.remainingSeconds.toLong(), codeGeneration, ::nextCode)),
-                    onReveal = { reveal(current.store, current.name) },
-                    onCopyPassword = { copyPassword(current.store, current.name) },
-                    onShowCode = { showCode(current.store, current.name) },
-                    onCopyCode = { copyCode(current.store, current.name) },
-                    onBack = ::back,
+                    value = ui.value,
+                    code = if (live == null) {
+                        ui.code
+                    } else {
+                        Shown.Value(countdown(live.code, live.remainingSeconds.toLong(), ui.codeGeneration, model::nextCode))
+                    },
+                    onReveal = { model.reveal(current.store, current.name) },
+                    onCopyPassword = { model.copyPassword(current.store, current.name) },
+                    onShowCode = { model.showCode(current.store, current.name) },
+                    onCopyCode = { model.copyCode(current.store, current.name) },
+                    onBack = model::back,
                 )
             }
         }
@@ -140,90 +115,15 @@ class MainActivity : ComponentActivity() {
                 confirm = stringResource(R.string.action_reset),
                 onConfirm = {
                     confirmingReset = false
-                    work({ app.reset() }) { render() }
+                    model.reset()
                 },
                 onDismiss = { confirmingReset = false },
             )
         }
     }
 
-    private fun back() {
-        if (entry != null) entry = null else store = null
-        render()
-    }
-
-    private fun <T> work(task: () -> T, done: (Result<T>) -> Unit) {
-        working = true
-        app.background(task) { result ->
-            working = false
-            if (!isDestroyed) done(result)
-        }
-    }
-
-    private fun busy(text: String) {
-        route = Route.Busy(text)
-    }
-
-    private fun failed(error: Throwable) {
-        route = Route.Failed(describe(error), ::render)
-    }
-
-    private fun hideValues() {
-        value = Shown.Hidden
-        code = Shown.Hidden
-        liveCode = null
-    }
-
-    private fun render() {
-        if (working) return
-        hideValues()
-        val device = app.device
-        route = when {
-            app.restoreError != null -> Route.RestoreFailed(app.restoreError.toString())
-            device == null -> setupRoute()
-            !device.signedIn() -> Route.SignIn(device.serverUrl())
-            device.organization() == null -> return join()
-            !app.unlocked() -> return locked()
-            store == null -> Route.Stores(device.stores(), device.offline(), autofillMissing(), app.managed.unlockChoices(), app.unlockSeconds())
-            entry == null -> Route.Entries(store!!)
-            else -> Route.Entry(store!!, entry!!, app.managed.allowCopy)
-        }
-    }
-
-    private val setupPreferences get() = getSharedPreferences("setup", MODE_PRIVATE)
-
-    private fun setupRoute(): Route.Setup {
-        val managed = app.managed
-        val saved = setupPreferences
-        fun field(policy: String?, key: String) = SetupField(policy ?: saved.getString(key, null).orEmpty(), policy != null)
-        return Route.Setup(
-            server = field(managed.serverUrl, "server"),
-            org = field(managed.organization, "org"),
-            genesis = field(managed.genesisHash, "genesis"),
-            checkpoint = field(managed.checkpointKey, "checkpoint"),
-            tier = app.supportedTier(),
-        )
-    }
-
-    private fun create(values: SetupValues) {
-        setupPreferences.edit()
-            .putString("server", values.server)
-            .putString("org", values.org)
-            .putString("genesis", values.genesis)
-            .putString("checkpoint", values.checkpoint)
-            .apply()
-        busy(getString(R.string.setup_creating))
-        work({
-            val device = app.create(values.server)
-            device.connect(values.checkpoint.ifEmpty { null })
-            app.save()
-        }) { result ->
-            result.onFailure { error -> work({ app.reset() }) { failed(error) } }
-            result.onSuccess { render() }
-        }
-    }
-
     private fun signIn() {
+        if (model.working) return
         val device = app.device ?: return
         val url = device.startSignIn(REDIRECT)
         // A Custom Tab, or the browser where none supports it; the server
@@ -234,127 +134,65 @@ class MainActivity : ComponentActivity() {
     private fun handleRedirect(intent: Intent?) {
         val data = intent?.data ?: return
         if (data.scheme != REDIRECT_SCHEME) return
-        val device = app.device ?: return
         setIntent(Intent(this, MainActivity::class.java))
-        busy(getString(R.string.sign_in_finishing))
-        work({
-            device.finishSignIn(data.toString())
-            app.save()
-        }) { result ->
-            result.onFailure { failed(it) }
-            result.onSuccess { render() }
-        }
-    }
-
-    private fun join() {
-        val managed = app.managed
-        val org = managed.organization ?: setupPreferences.getString("org", null).orEmpty()
-        val genesis = managed.genesisHash ?: setupPreferences.getString("genesis", null).orEmpty()
-        busy(getString(R.string.join_running))
-        work({
-            val enrollment = app.device!!.join(org, genesis)
-            app.save()
-            enrollment
-        }) { result ->
-            result.onFailure { failed(it) }
-            result.onSuccess { render() }
-        }
-    }
-
-    private fun locked() {
-        val device = app.device ?: return
-        val fingerprint = device.fingerprint()
-        route = Route.Locked(fingerprint, approveCommand(device.deviceId(), fingerprint, device.organization()), app.keys.tier)
-        lockStatus = null
-        work({ device.enrollment() to device.refresh() }) { result ->
-            result.onFailure { lockStatus = LockStatus(describe(it), canUnlock = false, Tone.ERROR) }
-            result.onSuccess { (enrollment, org) ->
-                app.save()
-                lockStatus = when {
-                    org.active -> LockStatus(getString(R.string.locked_active, org.name), canUnlock = true)
-                    enrollment.pending -> LockStatus(getString(R.string.locked_pending, org.name), canUnlock = false)
-                    else -> LockStatus(getString(R.string.locked_inactive, org.name), canUnlock = false, Tone.WARNING)
-                }
-            }
-        }
-    }
-
-    private fun unlock() = Unlocker.unlock(this) { result ->
-        result.onFailure { failed(it) }
-        result.onSuccess { render() }
-    }
-
-    private fun autofillMissing(): Boolean {
-        val autofill = getSystemService(AutofillManager::class.java)
-        return autofill != null && autofill.isAutofillSupported && !autofill.hasEnabledAutofillServices()
+        model.finishSignIn(data.toString())
     }
 
     private fun offerAutofill() = startActivity(
         Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).setData(Uri.parse("package:$packageName")),
     )
 
-    /**
-     * The device for a read: `null` while another request runs, and `null`
-     * after rendering the locked screen when the stores closed.
-     */
-    private fun open(): wtf.metio.pasejo.core.Device? {
-        if (working) return null
-        val device = app.device
-        if (device == null || !app.unlocked()) {
-            render()
-            return null
-        }
-        return device
-    }
+    private inner class Environment : MainEnvironment {
+        private val preferences get() = getSharedPreferences("setup", MODE_PRIVATE)
 
-    private fun reveal(store: StoreView, name: String) {
-        val device = open() ?: return
-        work({ device.reveal(store.id, name).also { app.save() } }) { result ->
-            result.onFailure { value = Shown.Message(describe(it)) }
-            result.onSuccess { value = Shown.Value(it) }
-        }
-    }
-
-    private fun copyPassword(store: StoreView, name: String) {
-        val device = open() ?: return
-        work({ device.reveal(store.id, name).also { app.save() }.lineSequence().first() }) { result ->
-            result.onFailure { value = Shown.Message(describe(it)) }
-            result.onSuccess {
-                Clipboard.copy(this, CLIP_LABEL, it)
-                value = Shown.Message(getString(R.string.entry_copied, Clipboard.CLEAR_SECONDS))
+        override val device: DeviceInterface? get() = app.device
+        override val restoreError: String? get() = app.restoreError
+        override val managed: ManagedConfig get() = app.managed
+        override val keyTier: Tier? get() = app.keys.tier
+        override val supportedTier: Tier get() = app.supportedTier()
+        override var chosenUnlockSeconds: Int
+            get() = app.chosenUnlockSeconds
+            set(seconds) {
+                app.chosenUnlockSeconds = seconds
             }
+        override var setup: SetupValues
+            get() = preferences.run {
+                SetupValues(
+                    server = getString("server", null).orEmpty(),
+                    org = getString("org", null).orEmpty(),
+                    genesis = getString("genesis", null).orEmpty(),
+                    checkpoint = getString("checkpoint", null).orEmpty(),
+                )
+            }
+            set(values) {
+                preferences.edit()
+                    .putString("server", values.server)
+                    .putString("org", values.org)
+                    .putString("genesis", values.genesis)
+                    .putString("checkpoint", values.checkpoint)
+                    .apply()
+            }
+
+        override fun unlocked() = app.unlocked()
+        override fun unlockSeconds() = app.unlockSeconds()
+        override fun lock() = app.lock()
+        override fun reset() = app.reset()
+        override fun create(server: String): DeviceInterface = app.create(server)
+        override fun save() = app.save()
+        override fun opened() = app.opened(app.unlockSeconds())
+        override fun copy(value: String) = Clipboard.copy(this@MainActivity, CLIP_LABEL, value)
+        override fun text(id: Int, vararg args: Any) = getString(id, *args)
+        override fun describe(error: Throwable) = this@MainActivity.describe(error)
+
+        override fun autofillMissing(): Boolean {
+            val autofill = getSystemService(AutofillManager::class.java)
+            return autofill != null && autofill.isAutofillSupported && !autofill.hasEnabledAutofillServices()
         }
-    }
 
-    private fun showCode(store: StoreView, name: String) {
-        val device = open() ?: return
-        work({ device.totp(store.id, name).also { app.save() } }) { result ->
-            result.onFailure {
-                liveCode = null
-                code = Shown.Message(describe(it))
-            }
-            result.onSuccess {
-                codeGeneration++
-                liveCode = it
-            }
-        }
-    }
+        override fun authenticate(done: (Result<() -> KeyAgreement>) -> Unit) = Unlocker.identity(this@MainActivity, done)
 
-    /** Fetches the next code once the shown one expires, while the stores stay open. */
-    private fun nextCode() {
-        val current = route as? Route.Entry ?: return
-        showCode(current.store, current.name)
-    }
-
-    private fun copyCode(store: StoreView, name: String) {
-        val device = open() ?: return
-        work({ device.totp(store.id, name).also { app.save() } }) { result ->
-            liveCode = null
-            result.onFailure { code = Shown.Message(describe(it)) }
-            result.onSuccess {
-                Clipboard.copy(this, CLIP_LABEL, it.code)
-                code = Shown.Message(getString(R.string.entry_copied, Clipboard.CLEAR_SECONDS))
-            }
+        override fun <T> background(work: () -> T, done: (Result<T>) -> Unit) = app.background(work) { result ->
+            if (!isDestroyed) done(result)
         }
     }
 

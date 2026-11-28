@@ -47,6 +47,23 @@ class StateStoreTest {
     }
 
     @Test
+    fun concurrentSavesLeaveOneWholeState() {
+        val first = "a".repeat(64 * 1024)
+        val second = "b".repeat(64 * 1024)
+        val failures = java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
+        val threads = listOf(first, second).map { state ->
+            Thread {
+                repeat(50) { runCatching { states.save(state) }.onFailure(failures::add) }
+            }
+        }
+        threads.forEach(Thread::start)
+        threads.forEach(Thread::join)
+        assertEquals(emptyList<Throwable>(), failures.toList())
+        val saved = states.load()
+        assert(saved == first || saved == second) { "the saved state is neither: ${saved?.take(16)}" }
+    }
+
+    @Test
     fun theFileIsNotReadable() {
         states.save("session-token-in-the-clear")
         assertFalse(String(file.readBytes(), Charsets.ISO_8859_1).contains("session-token"))

@@ -22,31 +22,66 @@ import android.widget.RemoteViews
 /** One form, read from the structure the autofill framework passed. */
 data class Form(val targets: Targets<AutofillId>, val caller: Caller)
 
+/** One view of an autofill structure, without Android types; `id` is set for text fields. */
+data class Node<Id>(
+    val id: Id? = null,
+    val info: FieldInfo = FieldInfo(),
+    val webDomain: String? = null,
+    val children: List<Node<Id>> = emptyList(),
+)
+
+/** The fields of one form and the web domain they were reported under. */
+data class Found<Id>(val targets: Targets<Id>, val webDomain: String?)
+
 /** Reads forms and callers out of autofill structures. */
 object Forms {
-    fun read(context: Context, structure: AssistStructure): Form? {
-        val fields = mutableListOf<Pair<AutofillId, FieldInfo>>()
-        var webDomain: String? = null
-        fun visit(node: AssistStructure.ViewNode) {
-            if (webDomain == null) webDomain = node.webDomain
-            val id = node.autofillId
-            if (id != null && node.autofillType == android.view.View.AUTOFILL_TYPE_TEXT) {
-                fields += id to FieldInfo(
-                    hints = node.autofillHints?.toList().orEmpty(),
-                    inputType = node.inputType,
-                    htmlType = node.htmlInfo?.attributes?.firstOrNull { it.first == "type" }?.second,
-                    htmlAutocomplete = node.htmlInfo?.attributes?.firstOrNull { it.first == "autocomplete" }?.second,
-                    idEntry = node.idEntry,
-                    hint = node.hint,
-                )
+    /**
+     * The fields to fill and their web domain. Every field takes the domain
+     * of its nearest node that reports one, so a frame from another site
+     * keeps its own domain; a form whose fields come from different domains
+     * is not filled.
+     */
+    fun <Id> find(roots: List<Node<Id>>): Found<Id>? {
+        val fields = mutableListOf<Pair<Id, FieldInfo>>()
+        val domains = HashMap<Id, String?>()
+        fun visit(node: Node<Id>, inherited: String?) {
+            val domain = node.webDomain ?: inherited
+            node.id?.let { id ->
+                fields += id to node.info
+                domains[id] = domain
             }
-            for (index in 0 until node.childCount) visit(node.getChildAt(index))
+            node.children.forEach { visit(it, domain) }
         }
-        for (index in 0 until structure.windowNodeCount) visit(structure.getWindowNodeAt(index).rootViewNode)
+        roots.forEach { visit(it, null) }
         val targets = Targets.pick(fields) ?: return null
+        val chosen = targets.ids.map { domains.getValue(it) }.toSet()
+        return if (chosen.size == 1) Found(targets, chosen.single()) else null
+    }
+
+    fun read(context: Context, structure: AssistStructure): Form? {
         val packageName = structure.activityComponent.packageName
         if (packageName == context.packageName) return null
-        return Form(targets, Caller(packageName, certificates(context, packageName), webDomain))
+        val roots = (0 until structure.windowNodeCount).map { node(structure.getWindowNodeAt(it).rootViewNode) }
+        val found = find(roots) ?: return null
+        return Form(found.targets, Caller(packageName, certificates(context, packageName), found.webDomain))
+    }
+
+    private fun node(view: AssistStructure.ViewNode): Node<AutofillId> {
+        fun attribute(name: String) = view.htmlInfo?.attributes?.firstOrNull { it.first == name }?.second
+        val text = view.autofillId != null && view.autofillType == android.view.View.AUTOFILL_TYPE_TEXT
+        return Node(
+            id = view.autofillId.takeIf { text },
+            info = FieldInfo(
+                hints = view.autofillHints?.toList().orEmpty(),
+                inputType = view.inputType,
+                htmlType = attribute("type"),
+                htmlAutocomplete = attribute("autocomplete"),
+                idEntry = view.idEntry,
+                hint = view.hint,
+            ),
+            webDomain = view.webDomain,
+            children = (0 until view.childCount).map { node(view.getChildAt(it)) },
+        )
     }
 
     /** SHA-256 fingerprints of the certificates the package's contents are signed with now. */
