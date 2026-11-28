@@ -9,34 +9,14 @@ import android.hardware.biometrics.BiometricPrompt
 import android.os.CancellationSignal
 import javax.crypto.Cipher
 import wtf.metio.pasejo.core.KeyAgreement
-import wtf.metio.pasejo.core.StoreView
 
 /**
- * Asks the person to authenticate and opens the store keys with the age
- * identity. The sealed tier binds the prompt to the cipher that unseals the
- * identity; the hardware tier's key accepts agreements for a short window
- * after any strong authentication.
+ * Asks the person to authenticate for the age identity. The sealed tier
+ * binds the prompt to the cipher that unseals the identity; the hardware
+ * tier's key accepts agreements for a short window after any strong
+ * authentication.
  */
 object Unlocker {
-    fun unlock(activity: Activity, done: (Result<List<StoreView>>) -> Unit) {
-        val app = activity.application as PasejoApp
-        val device = app.device ?: return done(Result.failure(IllegalStateException("no device")))
-        identity(activity) { authenticated ->
-            authenticated.fold(
-                { identity ->
-                    app.background({ device.unlock(identity()) }) { opened ->
-                        if (opened.isSuccess) {
-                            app.opened(app.unlockSeconds())
-                            app.save()
-                        }
-                        done(opened)
-                    }
-                },
-                { error -> done(Result.failure(error)) },
-            )
-        }
-    }
-
     /**
      * Asks the person to authenticate and hands back the age identity, which
      * is to be opened off the main thread.

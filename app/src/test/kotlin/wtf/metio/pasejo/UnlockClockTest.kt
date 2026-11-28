@@ -55,4 +55,24 @@ class UnlockClockTest {
         clock.lock()
         assertFalse(clock.open())
     }
+
+    @Test
+    fun anEndedPeriodAnswersWithoutTheDevice() {
+        val device = FakeDevice().apply { held = true }
+        assertEquals(false, storesOpen(period = false, device = device) { error("not closed") })
+        assertEquals(emptyList<String>(), device.outsideCalls)
+    }
+
+    @Test
+    fun aLostSessionClosesTheStores() {
+        var closed = false
+        assertEquals(false, storesOpen(true, FakeDevice().apply { signedIn = false }) { closed = true })
+        assertEquals(true, closed)
+    }
+
+    @Test
+    fun aRunningPeriodAsksTheDevice() {
+        assertEquals(true, storesOpen(true, FakeDevice()) { error("not closed") })
+        assertEquals(false, storesOpen(true, FakeDevice().apply { unlocked = false }) { error("not closed") })
+    }
 }

@@ -81,6 +81,15 @@ class ScreensUiTest {
     }
 
     @Test
+    fun aFailureOffersRetryAndReset() {
+        var reset = false
+        compose.setContent { PasejoTheme { FailedScreen("bad genesis", text(R.string.action_retry), onAction = {}) { reset = true } } }
+        compose.onNodeWithText(text(R.string.action_retry)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.action_reset)).performClick()
+        assertEquals(true, reset)
+    }
+
+    @Test
     fun aManagedFieldIsLockedAndSaysWhy() {
         compose.setContent {
             PasejoTheme {

@@ -65,13 +65,18 @@ class MainActivity : ComponentActivity() {
         BackHandler(enabled = ui.navigable) { model.back() }
         when (val current = ui.route) {
             is Route.Busy -> Busy(current.text)
-            is Route.Failed -> FailedScreen(current.message, stringResource(R.string.action_retry), model::render)
+            // A failure can come from values that never work, such as a
+            // mistyped organization, so the way back to set-up stays open.
+            is Route.Failed -> FailedScreen(current.message, stringResource(R.string.action_retry), model::render) {
+                confirmingReset = true
+            }
             is Route.RestoreFailed -> FailedScreen(
                 stringResource(R.string.restore_failed, current.reason),
                 stringResource(R.string.action_reset),
-            ) { confirmingReset = true }
+                onAction = { confirmingReset = true },
+            )
             is Route.Setup -> SetupScreen(current.server, current.org, current.genesis, current.checkpoint, current.tier, model::create)
-            is Route.SignIn -> SignInScreen(current.server, ::signIn) { confirmingReset = true }
+            is Route.SignIn -> SignInScreen(current.server, model::signIn) { confirmingReset = true }
             is Route.Locked -> LockedScreen(current.fingerprint, current.command, current.tier, ui.lockStatus, model::unlock) {
                 confirmingReset = true
             }
@@ -122,15 +127,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun signIn() {
-        if (model.working) return
-        val device = app.device ?: return
-        val url = device.startSignIn(REDIRECT)
-        // A Custom Tab, or the browser where none supports it; the server
-        // redirects to REDIRECT, which the browser hands back to this activity.
-        CustomTabsIntent.Builder().build().launchUrl(this, Uri.parse(url))
-    }
-
     private fun handleRedirect(intent: Intent?) {
         val data = intent?.data ?: return
         if (data.scheme != REDIRECT_SCHEME) return
@@ -147,6 +143,7 @@ class MainActivity : ComponentActivity() {
 
         override val requests: InFlight get() = app.requests
         override val device: DeviceInterface? get() = app.device
+        override val locks: Int get() = app.locks
         override val restoreError: String? get() = app.restoreError
         override val managed: ManagedConfig get() = app.managed
         override val keyTier: Tier? get() = app.keys.tier
@@ -192,9 +189,13 @@ class MainActivity : ComponentActivity() {
 
         override fun authenticate(done: (Result<() -> KeyAgreement>) -> Unit) = Unlocker.identity(this@MainActivity, done)
 
-        override fun <T> background(work: () -> T, done: (Result<T>) -> Unit) = app.background(work) { result ->
-            if (!isDestroyed) done(result)
-        }
+        // Results reach the model even after the activity is gone, so an
+        // unlock that finishes after a rotation still starts its period.
+        override fun <T> background(work: () -> T, done: (Result<T>) -> Unit) = app.background(work, done)
+
+        // A Custom Tab, or the browser where none supports it; the server
+        // redirects to REDIRECT, which the browser hands back to this activity.
+        override fun browse(url: String) = CustomTabsIntent.Builder().build().launchUrl(this@MainActivity, Uri.parse(url))
     }
 
     companion object {

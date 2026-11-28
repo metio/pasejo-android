@@ -36,6 +36,7 @@ fun Activity.describe(error: Throwable): String = when (error) {
     is MobileException.Invalid -> error.reason
     is InsecureKeyStoreException -> getString(R.string.error_insecure_key_store)
     is NoScreenLockException -> getString(R.string.error_no_screen_lock)
+    is android.content.ActivityNotFoundException -> getString(R.string.error_no_browser)
     else -> error.message ?: error.javaClass.simpleName
 }
 

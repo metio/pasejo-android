@@ -83,6 +83,7 @@
     <string name="error_key">No se puede usar la clave del dispositivo: %1$s</string>
     <string name="error_insecure_key_store">Este teléfono guarda las claves solo en software, así que pasejo no puede protegerlas aquí.</string>
     <string name="error_no_screen_lock">Configura primero un bloqueo de pantalla (PIN, patrón o contraseña). pasejo protege sus claves con él.</string>
+    <string name="error_no_browser">Ningún navegador de este teléfono puede abrir la página de inicio de sesión.</string>
 
     <string name="restriction_server_url">URL del servidor</string>
     <string name="restriction_server_url_description">La URL https del servidor pasejo.</string>

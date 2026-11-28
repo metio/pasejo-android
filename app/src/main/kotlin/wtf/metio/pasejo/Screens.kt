@@ -351,10 +351,11 @@ fun countdown(code: String, remainingSeconds: Long, generation: Int, onExpired: 
 }
 
 @Composable
-fun FailedScreen(message: String, action: String, onAction: () -> Unit) = Page(title = null) {
+fun FailedScreen(message: String, action: String, onAction: () -> Unit, onReset: (() -> Unit)? = null) = Page(title = null) {
     Hero(stringResource(R.string.error_title))
     Notice(message, Tone.ERROR, Icons.Filled.Warning)
     Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(action) }
+    if (onReset != null) ResetButton(onReset)
 }
 
 @Composable

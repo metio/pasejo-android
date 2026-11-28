@@ -32,6 +32,15 @@ class PasejoApp : Application() {
     val clock = UnlockClock()
     val links = LinkCache(::verifyAppDomain)
     private val worker = Executors.newSingleThreadExecutor()
+
+    // Locking takes the core's lock, which a running request may hold for
+    // its network timeouts, so it waits on a thread of its own instead of
+    // the main thread or behind queued requests.
+    private val locker = Executors.newSingleThreadExecutor()
+
+    /** How often the stores were locked; an unlock that saw a lock while it ran closes them again. */
+    private val lockCount = java.util.concurrent.atomic.AtomicInteger()
+    val locks: Int get() = lockCount.get()
     val requests = InFlight()
     private val main = Handler(Looper.getMainLooper())
     private val expire = Runnable { lock() }
@@ -98,10 +107,10 @@ class PasejoApp : Application() {
         val created = Device.create(serverUrl, Build.MODEL, keys.signer(), keys.agreementPublicKey(), TrustAnchors.system())
         device = created
         restoreError = null
-        save()
         return created
     }
 
+    @Synchronized
     fun save() {
         device?.let { states.save(it.state()) }
     }
@@ -110,11 +119,7 @@ class PasejoApp : Application() {
      * Whether store keys are open; drops them once the period or the
      * session ended, since an unlock period never outlasts the session.
      */
-    fun unlocked(): Boolean {
-        val current = device ?: return false
-        if (!clock.open() || !current.signedIn()) current.lock()
-        return current.unlocked()
-    }
+    fun unlocked(): Boolean = storesOpen(clock.open(), device, ::lock)
 
     /** The unlock period the person chose, before the policy caps it. */
     var chosenUnlockSeconds: Int
@@ -149,7 +154,8 @@ class PasejoApp : Application() {
     fun lock() {
         main.removeCallbacks(expire)
         clock.lock()
-        device?.lock()
+        lockCount.incrementAndGet()
+        device?.let { current -> locker.execute { current.lock() } }
         changed()
     }
 
