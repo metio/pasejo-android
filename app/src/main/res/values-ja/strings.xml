@@ -83,6 +83,7 @@
     <string name="error_key">デバイス鍵を使用できません: %1$s</string>
     <string name="error_insecure_key_store">この電話は鍵をソフトウェアでしか保管しないため、pasejo はここで鍵を保護できません。</string>
     <string name="error_no_screen_lock">先に画面ロック（PIN、パターン、またはパスワード）を設定してください。pasejo はそれで鍵を保護します。</string>
+    <string name="error_no_browser">この端末のブラウザーではサインインページを開けません。</string>
 
     <string name="restriction_server_url">サーバー URL</string>
     <string name="restriction_server_url_description">pasejo サーバーの https URL。</string>

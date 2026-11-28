@@ -83,6 +83,7 @@
     <string name="error_key">Der Geräteschlüssel kann nicht verwendet werden: %1$s</string>
     <string name="error_insecure_key_store">Dieses Telefon bewahrt Schlüssel nur in Software auf, daher kann pasejo sie hier nicht schützen.</string>
     <string name="error_no_screen_lock">Richte zuerst eine Displaysperre ein (PIN, Muster oder Passwort). pasejo schützt seine Schlüssel damit.</string>
+    <string name="error_no_browser">Kein Browser auf diesem Telefon kann die Anmeldeseite öffnen.</string>
 
     <string name="restriction_server_url">Server-URL</string>
     <string name="restriction_server_url_description">Die https-URL des pasejo-Servers.</string>

@@ -83,6 +83,7 @@
     <string name="error_key">无法使用设备密钥：%1$s</string>
     <string name="error_insecure_key_store">此手机只能在软件中保存密钥，因此 pasejo 无法在此保护它们。</string>
     <string name="error_no_screen_lock">请先设置屏幕锁定（PIN 码、图案或密码）。pasejo 用它保护密钥。</string>
+    <string name="error_no_browser">此手机上没有可以打开登录页面的浏览器。</string>
 
     <string name="restriction_server_url">服务器 URL</string>
     <string name="restriction_server_url_description">pasejo 服务器的 https URL。</string>

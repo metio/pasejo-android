@@ -4,7 +4,7 @@
 package wtf.metio.pasejo
 
 import wtf.metio.pasejo.core.DeviceInterface
-import wtf.metio.pasejo.core.KeyAgreement
+import wtf.metio.pasejo.core.MobileException
 import wtf.metio.pasejo.core.StoreView
 import wtf.metio.pasejo.core.TotpCode
 
@@ -41,35 +41,21 @@ data class MainUi(
 }
 
 /** What the main screen needs from the app and the platform. */
-interface MainEnvironment {
-    /** The requests that run in the whole app; finishing one may call the screen's redraw. */
-    val requests: InFlight
-    val device: DeviceInterface?
+interface MainEnvironment : Platform {
     val restoreError: String?
     val managed: ManagedConfig
     val keyTier: Tier?
     val supportedTier: Tier
     var chosenUnlockSeconds: Int
     var setup: SetupValues
-    fun unlocked(): Boolean
     fun unlockSeconds(): Int
-    fun lock()
     fun reset()
     fun create(server: String): DeviceInterface
-    fun save()
     fun autofillMissing(): Boolean
-    fun text(id: Int, vararg args: Any): String
-    fun describe(error: Throwable): String
     fun copy(value: String)
 
-    /** Asks the person to authenticate and hands back the age identity, off the main thread. */
-    fun authenticate(done: (Result<() -> KeyAgreement>) -> Unit)
-
-    /** Starts the unlock period after the stores opened. */
-    fun opened()
-
-    /** Runs `work` off the main thread as one of [requests] and hands its result to `done` on it. */
-    fun <T> background(work: () -> T, done: (Result<T>) -> Unit)
+    /** Opens `url` in a browser tab; fails when the phone has no browser. */
+    fun browse(url: String)
 }
 
 /**
@@ -151,14 +137,27 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
     fun create(values: SetupValues) {
         env.setup = values
         busy(R.string.setup_creating)
+        // The device is saved only once its server checked out, and a failed
+        // set-up is undone inside the request, so neither depends on this
+        // screen still being there when it finishes.
         work({
-            val device = env.create(values.server)
-            device.connect(values.checkpoint.ifEmpty { null })
-            env.save()
+            try {
+                env.create(values.server).connect(values.checkpoint.ifEmpty { null })
+                env.save()
+            } catch (error: Exception) {
+                env.reset()
+                throw error
+            }
         }) { result ->
-            result.onFailure { error -> work({ env.reset() }) { failed(error) } }
+            result.onFailure(::failed)
             result.onSuccess { render() }
         }
+    }
+
+    fun signIn() {
+        if (working) return
+        val device = env.device ?: return
+        runCatching { env.browse(device.startSignIn(MainActivity.REDIRECT)) }.onFailure(::failed)
     }
 
     fun finishSignIn(redirect: String) {
@@ -176,20 +175,9 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
     fun unlock() {
         if (working) return
         val device = env.device ?: return
-        env.authenticate { authenticated ->
-            authenticated.onFailure(::failed)
-            authenticated.onSuccess { identity ->
-                work({
-                    device.unlock(identity())
-                    env.save()
-                }) { result ->
-                    result.onFailure(::failed)
-                    result.onSuccess {
-                        env.opened()
-                        render()
-                    }
-                }
-            }
+        env.unlockStores(device) { result ->
+            result.onFailure(::failed)
+            result.onSuccess { render() }
         }
     }
 
@@ -212,6 +200,11 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
     /** Fetches the next code once the shown one expired, while the entry stays open. */
     fun nextCode() {
         val current = ui.route as? Route.Entry ?: return
+        if (working) {
+            // The expired code must not stay; the person asks for a new one.
+            ui = ui.copy(liveCode = null, code = Shown.Hidden)
+            return
+        }
         showCode(current.store, current.name)
     }
 
@@ -279,7 +272,12 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
                         else -> LockStatus(env.text(R.string.locked_inactive, org.name), canUnlock = false, Tone.WARNING)
                     }
                 },
-                { LockStatus(env.describe(it), canUnlock = false, Tone.ERROR) },
+                // Without the server, unlocking opens the offline copy where
+                // the organization allows one; the core decides.
+                { error ->
+                    val offline = error is MobileException.Network
+                    LockStatus(env.describe(error), canUnlock = offline, if (offline) Tone.WARNING else Tone.ERROR)
+                },
             )
             ui = ui.copy(lockStatus = status)
         }

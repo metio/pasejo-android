@@ -83,6 +83,7 @@
     <string name="error_key">Impossibile usare la chiave del dispositivo: %1$s</string>
     <string name="error_insecure_key_store">Questo telefono conserva le chiavi solo via software, quindi pasejo non può proteggerle qui.</string>
     <string name="error_no_screen_lock">Imposta prima un blocco schermo (PIN, sequenza o password). pasejo protegge le sue chiavi con esso.</string>
+    <string name="error_no_browser">Nessun browser su questo telefono può aprire la pagina di accesso.</string>
 
     <string name="restriction_server_url">URL del server</string>
     <string name="restriction_server_url_description">L’URL https del server pasejo.</string>

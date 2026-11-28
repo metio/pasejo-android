@@ -85,6 +85,7 @@
     <string name="error_key">The device key cannot be used: %1$s</string>
     <string name="error_insecure_key_store">This phone keeps keys in software only, so pasejo cannot protect them here.</string>
     <string name="error_no_screen_lock">Set a screen lock (PIN, pattern or password) first. pasejo protects its keys with it.</string>
+    <string name="error_no_browser">No browser on this phone can open the sign-in page.</string>
 
     <string name="restriction_server_url">Server URL</string>
     <string name="restriction_server_url_description">The https URL of the pasejo server.</string>

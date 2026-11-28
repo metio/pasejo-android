@@ -83,6 +83,7 @@
     <string name="error_key">기기 키를 사용할 수 없습니다: %1$s</string>
     <string name="error_insecure_key_store">이 휴대전화는 키를 소프트웨어로만 보관하므로 pasejo가 여기서 키를 보호할 수 없습니다.</string>
     <string name="error_no_screen_lock">먼저 화면 잠금(PIN, 패턴 또는 비밀번호)을 설정하세요. pasejo는 이것으로 키를 보호합니다.</string>
+    <string name="error_no_browser">이 휴대폰의 어떤 브라우저도 로그인 페이지를 열 수 없습니다.</string>
 
     <string name="restriction_server_url">서버 URL</string>
     <string name="restriction_server_url_description">pasejo 서버의 https URL입니다.</string>
