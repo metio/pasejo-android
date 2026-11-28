@@ -226,34 +226,17 @@ class DeviceKeys(
 
     private fun generatePair(algorithm: String, spec: KeyGenParameterSpec.Builder, strongBox: Boolean = false) {
         val generator = KeyPairGenerator.getInstance(algorithm, ANDROID_KEY_STORE)
-        if (strongBox) {
-            // StrongBox needs to support only RSA-2048, so a phone with
-            // StrongBox may still refuse this key; the trusted execution
-            // environment takes it then, and the security-level check
-            // that follows still refuses software keys.
-            try {
-                generator.initialize(spec.setIsStrongBoxBacked(true).build())
-                generator.generateKeyPair()
-                return
-            } catch (_: StrongBoxUnavailableException) {
-                spec.setIsStrongBoxBacked(false)
-            } catch (_: java.security.ProviderException) {
-                spec.setIsStrongBoxBacked(false)
-            } catch (_: GeneralSecurityException) {
-                spec.setIsStrongBoxBacked(false)
-            }
+        val generate = { inStrongBox: Boolean ->
+            generator.initialize(spec.setIsStrongBoxBacked(inStrongBox).build())
+            generator.generateKeyPair()
         }
-        generator.initialize(spec.build())
-        generator.generateKeyPair()
+        if (strongBox) preferStrongBox(generate) else generate(false)
     }
 
     private fun generateSecretKey(spec: KeyGenParameterSpec.Builder): SecretKey {
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE)
-        return try {
-            generator.init(spec.setIsStrongBoxBacked(true).build())
-            generator.generateKey()
-        } catch (_: StrongBoxUnavailableException) {
-            generator.init(spec.setIsStrongBoxBacked(false).build())
+        return preferStrongBox { inStrongBox ->
+            generator.init(spec.setIsStrongBoxBacked(inStrongBox).build())
             generator.generateKey()
         }
     }
@@ -320,6 +303,23 @@ class DeviceKeys(
             return cipher.doFinal(sealed, IV_BYTES, sealed.size - IV_BYTES)
         }
     }
+}
+
+/**
+ * Runs `generate` in StrongBox and, when StrongBox refuses the key, in the
+ * trusted execution environment. StrongBox needs to support only some
+ * algorithms and sizes, and phones report a refusal as any of these
+ * exceptions; the security-level check after generation still refuses
+ * software keys.
+ */
+fun <T> preferStrongBox(generate: (inStrongBox: Boolean) -> T): T = try {
+    generate(true)
+} catch (_: StrongBoxUnavailableException) {
+    generate(false)
+} catch (_: java.security.ProviderException) {
+    generate(false)
+} catch (_: GeneralSecurityException) {
+    generate(false)
 }
 
 /** Signs inside KeyMint. */

@@ -72,9 +72,9 @@ class MainActivity : ComponentActivity() {
             }
             is Route.RestoreFailed -> FailedScreen(
                 stringResource(R.string.restore_failed, current.reason),
-                stringResource(R.string.action_reset),
-                onAction = { confirmingReset = true },
-            )
+                stringResource(R.string.action_retry),
+                onAction = model::retryRestore,
+            ) { confirmingReset = true }
             is Route.Setup -> SetupScreen(current.server, current.org, current.genesis, current.checkpoint, current.tier, model::create)
             is Route.SignIn -> SignInScreen(current.server, model::signIn) { confirmingReset = true }
             is Route.Locked -> LockedScreen(current.fingerprint, current.command, current.tier, ui.lockStatus, model::unlock) {
@@ -145,6 +145,7 @@ class MainActivity : ComponentActivity() {
         override val device: DeviceInterface? get() = app.device
         override val locks: Int get() = app.locks
         override val restoreError: String? get() = app.restoreError
+        override fun restore() = app.restore()
         override val managed: ManagedConfig get() = app.managed
         override val keyTier: Tier? get() = app.keys.tier
         override val supportedTier: Tier get() = app.supportedTier()

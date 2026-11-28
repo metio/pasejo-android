@@ -16,6 +16,7 @@ import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.BeforeClass
@@ -73,6 +74,17 @@ class AutofillTest {
             ui.wait(Until.findObject(By.text(entry)), TIMEOUT)?.let { return it }
         }
         return null
+    }
+
+    @Test
+    fun theFillScreenSurvivesARotation() {
+        val context = instrumentation.targetContext
+        val info = context.packageManager.getActivityInfo(
+            android.content.ComponentName(context, FillActivity::class.java),
+            android.content.pm.PackageManager.ComponentInfoFlags.of(0),
+        )
+        val rotation = android.content.pm.ActivityInfo.CONFIG_ORIENTATION or android.content.pm.ActivityInfo.CONFIG_SCREEN_SIZE
+        assertEquals(rotation, info.configChanges and rotation)
     }
 
     @Test

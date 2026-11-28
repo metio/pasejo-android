@@ -21,6 +21,13 @@ class MainModelTest {
         var resetInsideRequest: Boolean? = null
 
         override var restoreError: String? = null
+        var restoreFails = false
+        var restores = 0
+
+        override fun restore() {
+            restores++
+            restoreError = if (restoreFails) "key store refused" else null
+        }
         override var managed = ManagedConfig()
         override val keyTier: Tier? = Tier.HARDWARE
         override val supportedTier = Tier.HARDWARE
@@ -303,6 +310,23 @@ class MainModelTest {
         model.render()
         model.signIn()
         assertEquals(Route.Failed("error no browser"), model.ui.route)
+    }
+
+    @Test
+    fun aFailedRestoreCanBeRetried() {
+        val (model, env) = model()
+        env.restoreError = "key store refused"
+        env.restoreFails = true
+        model.render()
+        assertEquals(Route.RestoreFailed("key store refused"), model.ui.route)
+        model.retryRestore()
+        env.finishAll()
+        assertEquals(Route.RestoreFailed("key store refused"), model.ui.route)
+        env.restoreFails = false
+        model.retryRestore()
+        env.finishAll()
+        assertEquals(2, env.restores)
+        assertTrue(model.ui.route !is Route.RestoreFailed)
     }
 
     @Test
