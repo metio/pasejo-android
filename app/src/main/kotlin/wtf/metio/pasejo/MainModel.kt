@@ -42,6 +42,8 @@ data class MainUi(
 
 /** What the main screen needs from the app and the platform. */
 interface MainEnvironment {
+    /** The requests that run in the whole app; finishing one may call the screen's redraw. */
+    val requests: InFlight
     val device: DeviceInterface?
     val restoreError: String?
     val managed: ManagedConfig
@@ -66,15 +68,15 @@ interface MainEnvironment {
     /** Starts the unlock period after the stores opened. */
     fun opened()
 
-    /** Runs `work` off the main thread and hands its result to `done` on it. */
+    /** Runs `work` off the main thread as one of [requests] and hands its result to `done` on it. */
     fun <T> background(work: () -> T, done: (Result<T>) -> Unit)
 }
 
 /**
  * The main screen's state and actions. Device calls take the core's lock,
  * which a running request holds, so the device is read on the main thread
- * only while no request runs; a redraw asked for meanwhile runs once the
- * last request finished.
+ * only while no request of the app runs; a redraw asked for meanwhile runs
+ * once the last one finished.
  */
 class MainModel(private val env: MainEnvironment, private val changed: (MainUi) -> Unit = {}) {
     var ui = MainUi()
@@ -85,16 +87,14 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
 
     private var store: StoreView? = null
     private var entry: String? = null
-    private var running = 0
-    private var redrawLater = false
 
     /** Whether a request runs, during which the device must not be read here. */
-    val working: Boolean get() = running > 0
+    val working: Boolean get() = env.requests.busy
 
     /** Draws the screen the app's state calls for, hiding every shown value. */
     fun render() {
         if (working) {
-            redrawLater = true
+            env.requests.redrawLater()
             return
         }
         val device = env.device
@@ -293,19 +293,5 @@ class MainModel(private val env: MainEnvironment, private val changed: (MainUi) 
         ui = MainUi(route = Route.Failed(env.describe(error)))
     }
 
-    /**
-     * Runs one request; `done` sees its result, and a redraw asked for while
-     * it ran follows `done` once no other request runs.
-     */
-    private fun <T> work(task: () -> T, done: (Result<T>) -> Unit) {
-        running++
-        env.background(task) { result ->
-            running--
-            done(result)
-            if (!working && redrawLater) {
-                redrawLater = false
-                render()
-            }
-        }
-    }
+    private fun <T> work(task: () -> T, done: (Result<T>) -> Unit) = env.background(task, done)
 }

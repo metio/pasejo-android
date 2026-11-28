@@ -76,6 +76,10 @@ class MainModelTest {
     /** Requests wait in a queue until the test finishes them, as on the worker. */
     private class FakeEnvironment(override var device: DeviceInterface?) : MainEnvironment {
         val fake get() = device as FakeDevice
+        override val requests = InFlight()
+
+        /** What PasejoApp calls as onChange: the redraw of the screen in front. */
+        var redraw: () -> Unit = {}
         val queue = ArrayDeque<() -> Unit>()
         val copied = mutableListOf<String>()
         var authentication: Result<() -> KeyAgreement>? = null
@@ -118,11 +122,12 @@ class MainModelTest {
         }
 
         override fun <T> background(work: () -> T, done: (Result<T>) -> Unit) {
+            requests.started()
             (device as? FakeDevice)?.held = true
             queue.addLast {
                 val result = (device as? FakeDevice).inside { runCatching(work) }
                 (device as? FakeDevice)?.held = queue.isNotEmpty()
-                done(result)
+                requests.finished({ done(result) }, redraw)
             }
         }
 
@@ -150,7 +155,9 @@ class MainModelTest {
 
     private fun model(device: FakeDevice? = FakeDevice()): Pair<MainModel, FakeEnvironment> {
         val env = FakeEnvironment(device)
-        return MainModel(env) to env
+        val model = MainModel(env)
+        env.redraw = model::render
+        return model to env
     }
 
     private fun MainModel.openEntryOf(name: String) {
@@ -313,6 +320,20 @@ class MainModelTest {
         env.finishAll()
         assertEquals(null, env.device)
         assertEquals(Route.Failed("error offline"), model.ui.route)
+    }
+
+    @Test
+    fun aRecreatedScreenWaitsForTheRequestOfTheOldOne() {
+        val (old, env) = model()
+        old.openEntryOf("mail")
+        old.reveal(store, "mail")
+        // Rotation: a new activity with its own model, on the same app.
+        val recreated = MainModel(env)
+        env.redraw = recreated::render
+        recreated.render()
+        assertEquals(emptyList<String>(), env.fake.outsideCalls)
+        env.finishAll()
+        assertTrue(recreated.ui.route is Route.Stores)
     }
 
     @Test

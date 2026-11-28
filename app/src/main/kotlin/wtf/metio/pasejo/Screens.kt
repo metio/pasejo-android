@@ -72,13 +72,20 @@ sealed interface Shown {
 }
 
 /**
- * The command an approver runs to approve this device; the fingerprint is
- * quoted, since it holds spaces.
+ * The command an approver runs to approve this device, ready to paste into
+ * a POSIX shell. The fingerprint holds spaces and is always quoted; the
+ * device and organization only when they hold anything but safe characters.
  */
 fun approveCommand(device: String, fingerprint: String, org: String?): String = buildString {
-    append("pasejo org approve ").append(device).append(" --fingerprint '").append(fingerprint).append('\'')
-    if (org != null) append(" --org ").append(org)
+    append("pasejo org approve ").append(shellWord(device)).append(" --fingerprint ").append(quoted(fingerprint))
+    if (org != null) append(" --org ").append(shellWord(org))
 }
+
+private val SAFE = Regex("[A-Za-z0-9._:/@%+=-]+")
+
+private fun shellWord(value: String) = if (SAFE.matches(value)) value else quoted(value)
+
+private fun quoted(value: String) = "'" + value.replace("'", "'\\''") + "'"
 
 /** The names of a store an entry list shows for [query]: each name once, sorted. */
 fun entryNames(store: StoreView, query: String): List<String> =
