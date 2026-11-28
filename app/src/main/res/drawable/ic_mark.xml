@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<!-- pasejo's mark: a p whose bowl is a key ring and whose stem is a key.
+     The glyph is centred and scaled into the 66-unit safe zone of an adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="-2.8"
+        android:translateY="-3.2">
+        <path
+            android:pathData="M47,45 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="7" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M56.8,45 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0" />
+        <path
+            android:pathData="M42,32 V84 M42,68 H53 M42,78 H50"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="7" />
+    </group>
+</vector>

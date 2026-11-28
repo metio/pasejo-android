@@ -3,6 +3,7 @@
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
     <string name="action_autofill">Usa pasejo per la compilazione automatica</string>
+    <string name="action_back">Indietro</string>
     <string name="action_continue">Continua</string>
     <string name="action_copy_code">Copia codice</string>
     <string name="action_copy_password">Copia password</string>
@@ -21,6 +22,7 @@
     <string name="setup_org">Identificativo dell’organizzazione</string>
     <string name="setup_genesis">Impronta dell’organizzazione</string>
     <string name="setup_checkpoint">Chiave di checkpoint (facoltativa)</string>
+    <string name="setup_managed">Impostato dalla tua organizzazione</string>
     <string name="setup_creating">Creazione delle chiavi del dispositivo e contatto con il server…</string>
     <string name="tier_hardware">Questo telefono conserva le chiavi del dispositivo nel suo hardware sicuro.</string>
     <string name="tier_sealed">Questo telefono non può conservare questi tipi di chiave nel suo hardware sicuro, quindi le chiavi del dispositivo sono sigillate da chiavi che vi conserva.</string>
@@ -46,6 +48,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">Copiato. Gli appunti vengono svuotati tra %1$d secondi.</string>
     <string name="entry_code">%1$s (%2$d s)</string>
+    <string name="entry_secret">Segreto</string>
+    <string name="entry_otp">Codice monouso</string>
 
     <string name="reset_title">Rimuovere questo dispositivo?</string>
     <string name="reset_message">Le chiavi del dispositivo e l’accesso su questo telefono vengono eliminati. Un nuovo accesso crea un nuovo dispositivo che un amministratore deve approvare.</string>

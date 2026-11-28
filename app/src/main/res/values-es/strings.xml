@@ -3,6 +3,7 @@
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
     <string name="action_autofill">Usar pasejo para el autocompletado</string>
+    <string name="action_back">Atrás</string>
     <string name="action_continue">Continuar</string>
     <string name="action_copy_code">Copiar código</string>
     <string name="action_copy_password">Copiar contraseña</string>
@@ -21,6 +22,7 @@
     <string name="setup_org">Identificador de la organización</string>
     <string name="setup_genesis">Huella de la organización</string>
     <string name="setup_checkpoint">Clave de checkpoint (opcional)</string>
+    <string name="setup_managed">Definido por tu organización</string>
     <string name="setup_creating">Creando las claves del dispositivo y contactando con el servidor…</string>
     <string name="tier_hardware">Este teléfono guarda las claves del dispositivo dentro de su hardware seguro.</string>
     <string name="tier_sealed">Este teléfono no puede guardar estos tipos de clave en su hardware seguro, así que las claves del dispositivo se sellan con claves que sí guarda allí.</string>
@@ -46,6 +48,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">Copiado. El portapapeles se vacía en %1$d segundos.</string>
     <string name="entry_code">%1$s (%2$d s)</string>
+    <string name="entry_secret">Secreto</string>
+    <string name="entry_otp">Código de un solo uso</string>
 
     <string name="reset_title">¿Eliminar este dispositivo?</string>
     <string name="reset_message">Se eliminan las claves del dispositivo y la sesión de este teléfono. Al iniciar sesión de nuevo se crea un dispositivo nuevo que un administrador debe aprobar.</string>

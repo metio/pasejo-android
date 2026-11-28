@@ -3,6 +3,7 @@
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
     <string name="action_autofill">pasejo für das automatische Ausfüllen verwenden</string>
+    <string name="action_back">Zurück</string>
     <string name="action_continue">Weiter</string>
     <string name="action_copy_code">Code kopieren</string>
     <string name="action_copy_password">Passwort kopieren</string>
@@ -21,6 +22,7 @@
     <string name="setup_org">Kennung der Organisation</string>
     <string name="setup_genesis">Fingerabdruck der Organisation</string>
     <string name="setup_checkpoint">Checkpoint-Schlüssel (optional)</string>
+    <string name="setup_managed">Von deiner Organisation festgelegt</string>
     <string name="setup_creating">Die Geräteschlüssel werden erzeugt und der Server wird kontaktiert…</string>
     <string name="tier_hardware">Dieses Telefon bewahrt die Geräteschlüssel in seiner sicheren Hardware auf.</string>
     <string name="tier_sealed">Dieses Telefon kann diese Schlüsseltypen nicht in seiner sicheren Hardware aufbewahren, daher werden die Geräteschlüssel mit Schlüsseln versiegelt, die es dort aufbewahrt.</string>
@@ -46,6 +48,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">Kopiert. Die Zwischenablage wird in %1$d Sekunden geleert.</string>
     <string name="entry_code">%1$s (%2$d s)</string>
+    <string name="entry_secret">Geheimnis</string>
+    <string name="entry_otp">Einmalcode</string>
 
     <string name="reset_title">Dieses Gerät entfernen?</string>
     <string name="reset_message">Die Geräteschlüssel und die Anmeldung auf diesem Telefon werden gelöscht. Eine erneute Anmeldung erzeugt ein neues Gerät, das freigegeben werden muss.</string>

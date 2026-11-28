@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: The pasejo Authors -->
+<!-- SPDX-License-Identifier: 0BSD -->
+<resources>
+    <color name="pasejo_indigo">#FF3D3A9E</color>
+    <color name="window_light">#FFFCF8FF</color>
+    <color name="window_dark">#FF131318</color>
+</resources>

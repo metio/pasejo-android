@@ -9,7 +9,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
-import android.widget.EditText
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -22,6 +26,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,6 +93,9 @@ class ManagedConfigurationTest {
         }
     }
 
+    @get:Rule
+    val compose = createEmptyComposeRule()
+
     private val app get() = instrumentation.targetContext.applicationContext as PasejoApp
 
     private fun restrict(restrictions: Bundle) {
@@ -140,20 +148,9 @@ class ManagedConfigurationTest {
     @Test
     fun theSetupScreenLocksManagedFields() {
         restrict(Bundle().apply { putString("server_url", "https://pasejo.example.com") })
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                val fields = mutableListOf<EditText>()
-                fun collect(view: android.view.View) {
-                    if (view is EditText) fields += view
-                    if (view is android.view.ViewGroup) for (i in 0 until view.childCount) collect(view.getChildAt(i))
-                }
-                collect(activity.window.decorView)
-                val server = fields.single { it.hint == activity.getString(R.string.setup_server) }
-                assertEquals("https://pasejo.example.com", server.text.toString())
-                assertFalse(server.isEnabled)
-                val org = fields.single { it.hint == activity.getString(R.string.setup_org) }
-                assertTrue(org.isEnabled)
-            }
+        ActivityScenario.launch(MainActivity::class.java).use {
+            compose.onNodeWithTag("setup-server").assertTextContains("https://pasejo.example.com").assertIsNotEnabled()
+            compose.onNodeWithTag("setup-org").assertIsEnabled()
         }
     }
 }

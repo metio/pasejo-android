@@ -3,37 +3,64 @@
 
 package wtf.metio.pasejo
 
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.text.Editable
-import android.text.TextWatcher
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.provider.Settings
+import android.view.autofill.AutofillManager
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import wtf.metio.pasejo.core.StoreView
+import wtf.metio.pasejo.core.TotpCode
+
+/** What the activity shows; each screen gets everything it needs from here. */
+sealed interface Route {
+    data class Busy(val text: String) : Route
+    data class Failed(val message: String, val retry: () -> Unit) : Route
+    data class RestoreFailed(val reason: String) : Route
+    data class Setup(val server: SetupField, val org: SetupField, val genesis: SetupField, val checkpoint: SetupField, val tier: Tier) : Route
+    data class SignIn(val server: String) : Route
+    data class Locked(val fingerprint: String) : Route
+    data class Stores(val stores: List<StoreView>, val offline: Boolean, val offerAutofill: Boolean) : Route
+    data class Entries(val store: StoreView) : Route
+    data class Entry(val store: StoreView, val name: String, val allowCopy: Boolean) : Route
+}
 
 /**
  * The app's one activity: set-up, sign-in, enrollment, unlock, then the
  * stores, their entries and one entry at a time.
  */
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private val app get() = application as PasejoApp
-    private val main = Handler(Looper.getMainLooper())
     private var store: StoreView? = null
     private var entry: String? = null
-    private var ticker: Runnable? = null
+
+    private var route by mutableStateOf<Route>(Route.Busy(""))
+    private var lockStatus by mutableStateOf<LockStatus?>(null)
+    private var value by mutableStateOf<Shown>(Shown.Hidden)
+    private var code by mutableStateOf<Shown>(Shown.Hidden)
+    private var liveCode by mutableStateOf<TotpCode?>(null)
+    private var codeGeneration by mutableIntStateOf(0)
+    private var confirmingReset by mutableStateOf(false)
 
     // Device calls take the core's lock, which a running request holds, so
-    // the main thread reads the device only while no request runs.
+    // the main thread reads the device only while no request runs. The
+    // screens read only the routes built here, never the device.
     private var working = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         secure()
+        setContent { PasejoTheme { Content() } }
         handleRedirect(intent)
         render()
     }
@@ -50,20 +77,64 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
-        stopTicker()
+        hideValues()
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        when {
-            entry != null -> entry = null
-            store != null -> store = null
-            else -> {
-                @Suppress("DEPRECATION")
-                super.onBackPressed()
-                return
+    @Composable
+    private fun Content() {
+        BackHandler(enabled = store != null && route.let { it is Route.Entries || it is Route.Entry }) { back() }
+        when (val current = route) {
+            is Route.Busy -> Busy(current.text)
+            is Route.Failed -> FailedScreen(current.message, stringResource(R.string.action_retry), current.retry)
+            is Route.RestoreFailed -> FailedScreen(
+                getString(R.string.restore_failed, current.reason),
+                stringResource(R.string.action_reset),
+            ) { confirmingReset = true }
+            is Route.Setup -> SetupScreen(current.server, current.org, current.genesis, current.checkpoint, current.tier, ::create)
+            is Route.SignIn -> SignInScreen(current.server, ::signIn) { confirmingReset = true }
+            is Route.Locked -> LockedScreen(current.fingerprint, lockStatus, ::unlock) { confirmingReset = true }
+            is Route.Stores -> StoresScreen(
+                current.stores,
+                current.offline,
+                current.offerAutofill,
+                onOpen = { store = it; render() },
+                onAutofill = ::offerAutofill,
+                onLock = { app.lock(); render() },
+            )
+            is Route.Entries -> EntriesScreen(current.store, onOpen = { entry = it; render() }, onBack = ::back)
+            is Route.Entry -> {
+                val live = liveCode
+                EntryScreen(
+                    name = current.name,
+                    secret = current.name in current.store.secrets,
+                    otp = current.name in current.store.otp,
+                    allowCopy = current.allowCopy,
+                    value = value,
+                    code = if (live == null) code else Shown.Value(countdown(live.code, live.remainingSeconds.toLong(), codeGeneration, ::nextCode)),
+                    onReveal = { reveal(current.store, current.name) },
+                    onCopyPassword = { copyPassword(current.store, current.name) },
+                    onShowCode = { showCode(current.store, current.name) },
+                    onCopyCode = { copyCode(current.store, current.name) },
+                    onBack = ::back,
+                )
             }
         }
+        if (confirmingReset) {
+            ConfirmDialog(
+                title = stringResource(R.string.reset_title),
+                text = stringResource(R.string.reset_message),
+                confirm = stringResource(R.string.action_reset),
+                onConfirm = {
+                    confirmingReset = false
+                    work({ app.reset() }) { render() }
+                },
+                onDismiss = { confirmingReset = false },
+            )
+        }
+    }
+
+    private fun back() {
+        if (entry != null) entry = null else store = null
         render()
     }
 
@@ -75,83 +146,74 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun render() {
-        if (working) return
-        stopTicker()
-        val device = app.device
-        when {
-            app.restoreError != null -> restoreFailed()
-            device == null -> setup()
-            !device.signedIn() -> signIn()
-            device.organization() == null -> join()
-            !app.unlocked() -> locked()
-            store == null -> stores()
-            entry == null -> entries(store!!)
-            else -> entry(store!!, entry!!)
-        }
+    private fun busy(text: String) {
+        route = Route.Busy(text)
     }
 
-    private fun busy(text: String) = Screen(this).apply {
-        title(getString(R.string.app_name))
-        text(text)
-    }.show()
+    private fun failed(error: Throwable) {
+        route = Route.Failed(describe(error), ::render)
+    }
 
-    private fun failed(error: Throwable, retry: () -> Unit = ::render) = Screen(this).apply {
-        title(getString(R.string.error_title))
-        text(describe(error))
-        button(getString(R.string.action_retry)) { retry() }
-    }.show()
+    private fun hideValues() {
+        value = Shown.Hidden
+        code = Shown.Hidden
+        liveCode = null
+    }
 
-    private fun restoreFailed() = Screen(this).apply {
-        title(getString(R.string.error_title))
-        text(getString(R.string.restore_failed, app.restoreError))
-        button(getString(R.string.action_reset)) { confirmReset() }
-    }.show()
+    private fun render() {
+        if (working) return
+        hideValues()
+        val device = app.device
+        route = when {
+            app.restoreError != null -> Route.RestoreFailed(app.restoreError.toString())
+            device == null -> setupRoute()
+            !device.signedIn() -> Route.SignIn(device.serverUrl())
+            device.organization() == null -> return join()
+            !app.unlocked() -> return locked()
+            store == null -> Route.Stores(device.stores(), device.offline(), autofillMissing())
+            entry == null -> Route.Entries(store!!)
+            else -> Route.Entry(store!!, entry!!, app.managed.allowCopy)
+        }
+    }
 
     private val setupPreferences get() = getSharedPreferences("setup", MODE_PRIVATE)
 
-    private fun setup() {
+    private fun setupRoute(): Route.Setup {
         val managed = app.managed
         val saved = setupPreferences
-        val screen = Screen(this)
-        screen.title(getString(R.string.setup_title))
-        screen.text(getString(R.string.setup_explanation))
-        val server = screen.field(getString(R.string.setup_server), managed.serverUrl ?: saved.getString("server", null), managed.serverUrl != null)
-        val org = screen.field(getString(R.string.setup_org), managed.organization ?: saved.getString("org", null), managed.organization != null)
-        val genesis = screen.field(getString(R.string.setup_genesis), managed.genesisHash ?: saved.getString("genesis", null), managed.genesisHash != null)
-        val checkpoint = screen.field(getString(R.string.setup_checkpoint), managed.checkpointKey ?: saved.getString("checkpoint", null), managed.checkpointKey != null)
-        screen.text(getString(if (app.supportedTier() == Tier.HARDWARE) R.string.tier_hardware else R.string.tier_sealed))
-        screen.button(getString(R.string.action_continue)) {
-            val values = listOf(server, org, genesis, checkpoint).map { it.text.toString().trim() }
-            saved.edit()
-                .putString("server", values[0])
-                .putString("org", values[1])
-                .putString("genesis", values[2])
-                .putString("checkpoint", values[3])
-                .apply()
-            busy(getString(R.string.setup_creating))
-            work({
-                val device = app.create(values[0])
-                device.connect(values[3].ifEmpty { null })
-                app.save()
-            }) { result ->
-                result.onFailure { error -> work({ app.reset() }) { failed(error) } }
-                result.onSuccess { render() }
-            }
-        }
-        screen.show()
+        fun field(policy: String?, key: String) = SetupField(policy ?: saved.getString(key, null).orEmpty(), policy != null)
+        return Route.Setup(
+            server = field(managed.serverUrl, "server"),
+            org = field(managed.organization, "org"),
+            genesis = field(managed.genesisHash, "genesis"),
+            checkpoint = field(managed.checkpointKey, "checkpoint"),
+            tier = app.supportedTier(),
+        )
     }
 
-    private fun signIn() = Screen(this).apply {
-        val device = app.device ?: return@apply
-        title(getString(R.string.sign_in_title))
-        text(getString(R.string.sign_in_explanation, device.serverUrl()))
-        button(getString(R.string.action_sign_in)) {
-            val url = device.startSignIn(REDIRECT)
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
+    private fun create(values: SetupValues) {
+        setupPreferences.edit()
+            .putString("server", values.server)
+            .putString("org", values.org)
+            .putString("genesis", values.genesis)
+            .putString("checkpoint", values.checkpoint)
+            .apply()
+        busy(getString(R.string.setup_creating))
+        work({
+            val device = app.create(values.server)
+            device.connect(values.checkpoint.ifEmpty { null })
+            app.save()
+        }) { result ->
+            result.onFailure { error -> work({ app.reset() }) { failed(error) } }
+            result.onSuccess { render() }
         }
-        button(getString(R.string.action_reset)) { confirmReset() }
-    }.show()
+    }
+
+    private fun signIn() {
+        val device = app.device ?: return
+        val url = device.startSignIn(REDIRECT)
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
+    }
 
     private fun handleRedirect(intent: Intent?) {
         val data = intent?.data ?: return
@@ -185,165 +247,84 @@ class MainActivity : Activity() {
 
     private fun locked() {
         val device = app.device ?: return
-        val screen = Screen(this)
-        screen.title(getString(R.string.locked_title))
-        val status = screen.text(getString(R.string.locked_checking))
-        screen.text(getString(R.string.locked_fingerprint))
-        screen.text(device.fingerprint(), monospace = true)
-        val unlock = screen.button(getString(R.string.action_unlock)) {
-            Unlocker.unlock(this) { result ->
-                result.onFailure { failed(it) }
-                result.onSuccess { render() }
-            }
-        }
-        unlock.isEnabled = false
-        screen.button(getString(R.string.action_reset)) { confirmReset() }
-        screen.show()
-        work({
-            device.enrollment() to device.refresh()
-        }) { result ->
-            result.onFailure { status.text = describe(it) }
+        route = Route.Locked(device.fingerprint())
+        lockStatus = null
+        work({ device.enrollment() to device.refresh() }) { result ->
+            result.onFailure { lockStatus = LockStatus(describe(it), canUnlock = false, Tone.ERROR) }
             result.onSuccess { (enrollment, org) ->
                 app.save()
-                status.text = when {
-                    org.active -> getString(R.string.locked_active, org.name)
-                    enrollment.pending -> getString(R.string.locked_pending, org.name)
-                    else -> getString(R.string.locked_inactive, org.name)
+                lockStatus = when {
+                    org.active -> LockStatus(getString(R.string.locked_active, org.name), canUnlock = true)
+                    enrollment.pending -> LockStatus(getString(R.string.locked_pending, org.name), canUnlock = false)
+                    else -> LockStatus(getString(R.string.locked_inactive, org.name), canUnlock = false, Tone.WARNING)
                 }
-                unlock.isEnabled = org.active
             }
         }
     }
 
-    private fun stores() {
+    private fun unlock() = Unlocker.unlock(this) { result ->
+        result.onFailure { failed(it) }
+        result.onSuccess { render() }
+    }
+
+    private fun autofillMissing(): Boolean {
+        val autofill = getSystemService(AutofillManager::class.java)
+        return autofill != null && autofill.isAutofillSupported && !autofill.hasEnabledAutofillServices()
+    }
+
+    private fun offerAutofill() = startActivity(
+        Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).setData(Uri.parse("package:$packageName")),
+    )
+
+    private fun reveal(store: StoreView, name: String) {
         val device = app.device ?: return
-        val screen = Screen(this)
-        screen.title(getString(R.string.stores_title))
-        if (device.offline()) screen.text(getString(R.string.offline_notice))
-        val stores = device.stores()
-        if (stores.isEmpty()) screen.text(getString(R.string.stores_empty))
-        for (each in stores) {
-            screen.button(each.label) {
-                store = each
-                render()
-            }
+        work({ device.reveal(store.id, name).also { app.save() } }) { result ->
+            result.onFailure { value = Shown.Message(describe(it)) }
+            result.onSuccess { value = Shown.Value(it) }
         }
-        val autofill = getSystemService(android.view.autofill.AutofillManager::class.java)
-        if (autofill != null && autofill.isAutofillSupported && !autofill.hasEnabledAutofillServices()) {
-            screen.text(getString(R.string.autofill_setup))
-            screen.button(getString(R.string.action_autofill)) {
-                startActivity(
-                    Intent(android.provider.Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)
-                        .setData(Uri.parse("package:$packageName")),
-                )
-            }
-        }
-        screen.button(getString(R.string.action_lock)) {
-            app.lock()
-            render()
-        }
-        screen.show()
     }
 
-    private fun entries(store: StoreView) {
-        val screen = Screen(this)
-        screen.title(store.label)
-        val filter = screen.field(getString(R.string.entries_filter), null)
-        val list = screen.add(LinearLayout(this).apply { orientation = LinearLayout.VERTICAL })
-        val names = (store.secrets + store.otp).distinct().sorted()
-        fun fill(query: String) {
-            list.removeAllViews()
-            for (name in names.filter { it.contains(query, ignoreCase = true) }) {
-                list.addView(android.widget.Button(this).apply {
-                    text = name
-                    isAllCaps = false
-                    setOnClickListener {
-                        entry = name
-                        render()
-                    }
-                })
-            }
-        }
-        filter.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            override fun afterTextChanged(s: Editable?) = fill(s?.toString().orEmpty())
-        })
-        fill("")
-        screen.show()
-    }
-
-    private fun entry(store: StoreView, name: String) {
+    private fun copyPassword(store: StoreView, name: String) {
         val device = app.device ?: return
-        val allowCopy = app.managed.allowCopy
-        val screen = Screen(this)
-        screen.title(name)
-        if (name in store.secrets) {
-            val value = screen.text(getString(R.string.entry_hidden), monospace = true)
-            screen.button(getString(R.string.action_reveal)) {
-                work({ device.reveal(store.id, name).also { app.save() } }) { result ->
-                    result.onFailure { value.text = describe(it) }
-                    result.onSuccess { value.text = it }
-                }
-            }
-            if (allowCopy) {
-                screen.button(getString(R.string.action_copy_password)) {
-                    work({ device.reveal(store.id, name).also { app.save() }.lineSequence().first() }) { result ->
-                        result.onFailure { value.text = describe(it) }
-                        result.onSuccess {
-                            Clipboard.copy(this, CLIP_LABEL, it)
-                            value.text = getString(R.string.entry_copied, Clipboard.CLEAR_SECONDS)
-                        }
-                    }
-                }
+        work({ device.reveal(store.id, name).also { app.save() }.lineSequence().first() }) { result ->
+            result.onFailure { value = Shown.Message(describe(it)) }
+            result.onSuccess {
+                Clipboard.copy(this, CLIP_LABEL, it)
+                value = Shown.Message(getString(R.string.entry_copied, Clipboard.CLEAR_SECONDS))
             }
         }
-        if (name in store.otp) {
-            val code = screen.text(getString(R.string.entry_hidden), monospace = true)
-            screen.button(getString(R.string.action_show_code)) { showCode(code, store, name) }
-            if (allowCopy) {
-                screen.button(getString(R.string.action_copy_code)) {
-                    work({ device.totp(store.id, name).also { app.save() } }) { result ->
-                        result.onFailure { code.text = describe(it) }
-                        result.onSuccess {
-                            Clipboard.copy(this, CLIP_LABEL, it.code)
-                            code.text = getString(R.string.entry_copied, Clipboard.CLEAR_SECONDS)
-                        }
-                    }
-                }
-            }
-        }
-        screen.show()
     }
 
-    private fun showCode(view: TextView, store: StoreView, name: String) {
+    private fun showCode(store: StoreView, name: String) {
         val device = app.device ?: return
         work({ device.totp(store.id, name).also { app.save() } }) { result ->
-            result.onFailure { view.text = describe(it) }
-            result.onSuccess { code ->
-                view.text = getString(R.string.entry_code, code.code, code.remainingSeconds.toLong())
-                stopTicker()
-                val again = Runnable { if (app.unlocked()) showCode(view, store, name) else render() }
-                ticker = again
-                main.postDelayed(again, code.remainingSeconds.toLong().coerceAtLeast(1) * 1000L)
+            result.onFailure {
+                liveCode = null
+                code = Shown.Message(describe(it))
+            }
+            result.onSuccess {
+                codeGeneration++
+                liveCode = it
             }
         }
     }
 
-    private fun stopTicker() {
-        ticker?.let(main::removeCallbacks)
-        ticker = null
+    /** Fetches the next code once the shown one expires, while the stores stay open. */
+    private fun nextCode() {
+        val current = route as? Route.Entry ?: return
+        if (app.unlocked()) showCode(current.store, current.name) else render()
     }
 
-    private fun confirmReset() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.reset_title)
-            .setMessage(R.string.reset_message)
-            .setPositiveButton(R.string.action_reset) { _, _ ->
-                work({ app.reset() }) { render() }
+    private fun copyCode(store: StoreView, name: String) {
+        val device = app.device ?: return
+        work({ device.totp(store.id, name).also { app.save() } }) { result ->
+            liveCode = null
+            result.onFailure { code = Shown.Message(describe(it)) }
+            result.onSuccess {
+                Clipboard.copy(this, CLIP_LABEL, it.code)
+                code = Shown.Message(getString(R.string.entry_copied, Clipboard.CLEAR_SECONDS))
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        }
     }
 
     companion object {

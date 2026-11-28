@@ -3,6 +3,7 @@
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
     <string name="action_autofill">自動入力に pasejo を使う</string>
+    <string name="action_back">戻る</string>
     <string name="action_continue">続ける</string>
     <string name="action_copy_code">コードをコピー</string>
     <string name="action_copy_password">パスワードをコピー</string>
@@ -21,6 +22,7 @@
     <string name="setup_org">組織の識別子</string>
     <string name="setup_genesis">組織のフィンガープリント</string>
     <string name="setup_checkpoint">チェックポイント鍵 (任意)</string>
+    <string name="setup_managed">組織によって設定されています</string>
     <string name="setup_creating">デバイス鍵を作成し、サーバーに接続しています…</string>
     <string name="tier_hardware">この電話はデバイス鍵をセキュアハードウェア内に保管します。</string>
     <string name="tier_sealed">この電話はこれらの種類の鍵をセキュアハードウェアに保管できないため、デバイス鍵はそこに保管された鍵で封印されます。</string>
@@ -46,6 +48,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">コピーしました。クリップボードは %1$d 秒後に消去されます。</string>
     <string name="entry_code">%1$s (%2$d 秒)</string>
+    <string name="entry_secret">シークレット</string>
+    <string name="entry_otp">ワンタイムコード</string>
 
     <string name="reset_title">このデバイスを削除しますか?</string>
     <string name="reset_message">この電話のデバイス鍵とサインインが削除されます。再度サインインすると、管理者の承認が必要な新しいデバイスが作成されます。</string>

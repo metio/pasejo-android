@@ -3,6 +3,7 @@
 <!-- SPDX-License-Identifier: 0BSD -->
 <resources>
     <string name="action_autofill">Utiliser pasejo pour la saisie automatique</string>
+    <string name="action_back">Retour</string>
     <string name="action_continue">Continuer</string>
     <string name="action_copy_code">Copier le code</string>
     <string name="action_copy_password">Copier le mot de passe</string>
@@ -21,6 +22,7 @@
     <string name="setup_org">Identifiant de l’organisation</string>
     <string name="setup_genesis">Empreinte de l’organisation</string>
     <string name="setup_checkpoint">Clé de checkpoint (facultative)</string>
+    <string name="setup_managed">Défini par votre organisation</string>
     <string name="setup_creating">Création des clés de l’appareil et connexion au serveur…</string>
     <string name="tier_hardware">Ce téléphone conserve les clés de l’appareil dans son matériel sécurisé.</string>
     <string name="tier_sealed">Ce téléphone ne peut pas conserver ces types de clé dans son matériel sécurisé ; les clés de l’appareil sont donc scellées par des clés qu’il y conserve.</string>
@@ -46,6 +48,8 @@
     <string name="entry_hidden">••••••••</string>
     <string name="entry_copied">Copié. Le presse-papiers est vidé dans %1$d secondes.</string>
     <string name="entry_code">%1$s (%2$d s)</string>
+    <string name="entry_secret">Secret</string>
+    <string name="entry_otp">Code à usage unique</string>
 
     <string name="reset_title">Retirer cet appareil ?</string>
     <string name="reset_message">Les clés de l’appareil et la connexion sur ce téléphone sont supprimées. Une nouvelle connexion crée un nouvel appareil qu’un administrateur doit approuver.</string>
