@@ -143,10 +143,14 @@ fun Notice(text: String, tone: Tone = Tone.INFO, icon: ImageVector? = null) {
 fun SectionTitle(text: String) =
     Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
 
-/** A value people compare or read aloud, in fixed-width groups of four. */
+/**
+ * A value people compare or read aloud, such as a fingerprint, in a fixed
+ * width font and exactly as the core formats it, which is how the CLI shows
+ * it to the person comparing.
+ */
 @Composable
 fun Grouped(value: String, modifier: Modifier = Modifier) = Text(
-    value.chunked(4).joinToString(" "),
+    value,
     modifier = modifier,
     style = MaterialTheme.typography.titleMedium,
     fontFamily = FontFamily.Monospace,
